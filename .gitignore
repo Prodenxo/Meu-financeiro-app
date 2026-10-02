@@ -1,0 +1,107 @@
+# Environment & Secrets (AIOX)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+*.key
+*.pem
+# Nunca commitar payloads de teste com credenciais
+body.json
+scratch/
+
+# Dependencies (AIOX)
+node_modules/
+node_modules
+
+# Build & Logs (AIOX)
+dist/
+frontend/dist/
+build/
+*.log
+logs/
+artifacts/
+
+# AIOX bootstrap local (estado gerado; regras ficam em .cursor/)
+.aiox/
+
+# Squads AIOX (framework; não faz parte do produto)
+squads/
+
+# Exports one-time (dados de clientes)
+backend/scripts/one-time/exports/*
+!backend/scripts/one-time/exports/.gitignore
+
+# Assets temporários / duplicatas na raiz (canônicos: frontend/public/)
+frontend-screenshot.png
+logo.png
+site.webmanifest
+favicon.ico
+favicon-16x16.png
+favicon-32x32.png
+apple-touch-icon.png
+android-chrome-192x192.png
+android-chrome-512x512.png
+
+# Windows Zone.Identifier (lixo de download)
+*Zone.Identifier*
+*:Zone.Identifier
+
+.agent/
+.playwright-mcp/
+
+# Tooling IA duplicado (config canônica: .cursor/)
+final_review_gate.mjs
+AGENTS.md
+cursorrules
+.cursorrules
+
+# IDE & OS (AIOX)
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# AIOX Local (AIOX)
+.aiox-core/local/
+.claude/settings.local.json
+.aiox/install-log.txt
+.aios
+.aios-core
+.claude
+.codex
+# Cursor: versionar regras AIOX em .cursor/rules; demais pastas locais
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/mem/
+!.cursor/mem/**
+!.cursor/workflows/
+!.cursor/workflows/**
+!.cursor/commands/
+!.cursor/commands/**
+!.cursor/hooks.json
+!.cursor/hooks/
+!.cursor/hooks/**
+.gemini
+.github
+.aiox-core
+.antigravity
+
+# AIOS Local (AIOS)
+.aios-core/local/
+.aios/install-log.txt
+
+.vercel
+
+# Node / npm — gerado localmente (em qualquer pasta com package.json)
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+coverage/
+*.tsbuildinfo
+.eslintcache
+cursorrules
+.cursorrules
