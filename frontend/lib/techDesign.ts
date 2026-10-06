@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 import type { Theme } from './theme';
-import { mfRadius, mfSpacing } from './theme';
+import { darkTheme, lightTheme, mfRadius, mfSpacing, mfWebShadow } from './theme';
 
 export type TechTokens = {
   accent: string;
@@ -22,59 +22,53 @@ export type TechTokens = {
   heroWashCss: string;
 };
 
+/**
+ * Tokens das telas antigas ("tech"), agora na paleta do site:
+ * acento = `primary`, painéis = `card`, fundo liso (sem grade nem gradiente).
+ * Mantido para as telas que ainda não foram migradas (etapas 2–7).
+ */
 export function getTechTokens(isDarkMode: boolean): TechTokens {
+  const t = isDarkMode ? darkTheme : lightTheme;
   if (isDarkMode) {
     return {
-      accent: '#22d3ee',
-      accentMuted: 'rgba(34, 211, 238, 0.38)',
-      accentSoft: 'rgba(34, 211, 238, 0.12)',
-      accentGlow: 'rgba(34, 211, 238, 0.22)',
-      panelFill: 'rgba(10, 15, 24, 0.94)',
-      panelBorder: 'rgba(34, 211, 238, 0.18)',
-      insetFill: 'rgba(6, 10, 18, 0.65)',
-      insetBorder: 'rgba(148, 163, 184, 0.14)',
-      divider: 'rgba(148, 163, 184, 0.14)',
-      canvasBase: '#030508',
-      gridCss: `repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(34, 211, 238, 0.07) 32px),
-        repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(34, 211, 238, 0.07) 32px)`,
-      canvasGradientCss: `radial-gradient(ellipse 100% 80% at 0% -20%, rgba(34, 211, 238, 0.18), transparent 55%),
-        radial-gradient(ellipse 70% 60% at 100% 0%, rgba(59, 130, 246, 0.12), transparent 50%),
-        linear-gradient(180deg, #030508 0%, #0a1018 45%, #05080d 100%)`,
-      panelShadow:
-        '0 12px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(34, 211, 238, 0.06), inset 0 1px 0 rgba(148, 163, 184, 0.12)',
-      kpiFeaturedShadow:
-        '0 1px 0 rgba(148, 163, 184, 0.16) inset, 0 10px 28px rgba(0, 0, 0, 0.72), 0 20px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(148, 163, 184, 0.18)',
-      kpiMetricShadow:
-        '0 1px 0 rgba(148, 163, 184, 0.16) inset, 0 10px 28px rgba(0, 0, 0, 0.72), 0 20px 48px rgba(0, 0, 0, 0.55), 0 0 40px rgba(34, 211, 238, 0.14), 0 0 0 1px rgba(148, 163, 184, 0.18)',
+      accent: t.primary,
+      accentMuted: 'rgba(139, 130, 242, 0.45)',
+      accentSoft: t.primarySoft,
+      accentGlow: t.primarySoft2,
+      panelFill: t.card,
+      panelBorder: t.border,
+      insetFill: t.cardMuted,
+      insetBorder: t.border,
+      divider: t.border,
+      canvasBase: t.background,
+      gridCss: 'none',
+      canvasGradientCss: 'none',
+      panelShadow: mfWebShadow(true, 'card'),
+      kpiFeaturedShadow: mfWebShadow(true, 'card'),
+      kpiMetricShadow: mfWebShadow(true, 'card'),
       heroWashCss:
-        'linear-gradient(90deg, rgba(34, 211, 238, 0.16) 0%, rgba(34, 211, 238, 0.05) 14%, transparent 28%)',
+        'linear-gradient(90deg, rgba(139, 130, 242, 0.16) 0%, rgba(139, 130, 242, 0.05) 14%, transparent 28%)',
     };
   }
 
   return {
-    accent: '#1d4ed8',
-    accentMuted: 'rgba(29, 78, 216, 0.35)',
-    accentSoft: 'rgba(29, 78, 216, 0.1)',
-    accentGlow: 'rgba(59, 130, 246, 0.2)',
-    panelFill: 'rgba(255, 255, 255, 0.92)',
-    panelBorder: 'rgba(29, 78, 216, 0.16)',
-    insetFill: 'rgba(248, 250, 252, 0.95)',
-    insetBorder: 'rgba(15, 23, 42, 0.08)',
-    divider: 'rgba(15, 23, 42, 0.08)',
-    canvasBase: '#e4eaf3',
-    gridCss: `repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(29, 78, 216, 0.07) 32px),
-      repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(29, 78, 216, 0.07) 32px)`,
-    canvasGradientCss: `radial-gradient(ellipse 90% 70% at 100% -10%, rgba(59, 130, 246, 0.14), transparent 52%),
-      radial-gradient(ellipse 60% 50% at 0% 100%, rgba(29, 78, 216, 0.08), transparent 48%),
-      linear-gradient(180deg, #eef2f8 0%, #f8fafc 40%, #e4eaf3 100%)`,
-    panelShadow:
-      '0 12px 40px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(29, 78, 216, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1)',
-    kpiFeaturedShadow:
-      '0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 20px 56px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.09)',
-    kpiMetricShadow:
-      '0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 20px 56px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.09)',
+    accent: t.primary,
+    accentMuted: 'rgba(91, 79, 233, 0.45)',
+    accentSoft: t.primarySoft,
+    accentGlow: t.primarySoft2,
+    panelFill: t.card,
+    panelBorder: t.border,
+    insetFill: t.cardMuted,
+    insetBorder: t.border,
+    divider: t.border,
+    canvasBase: t.background,
+    gridCss: 'none',
+    canvasGradientCss: 'none',
+    panelShadow: mfWebShadow(false, 'card'),
+    kpiFeaturedShadow: mfWebShadow(false, 'card'),
+    kpiMetricShadow: mfWebShadow(false, 'card'),
     heroWashCss:
-      'linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.04) 12%, transparent 26%)',
+      'linear-gradient(90deg, rgba(91, 79, 233, 0.12) 0%, rgba(91, 79, 233, 0.04) 12%, transparent 26%)',
   };
 }
 
@@ -91,15 +85,9 @@ export function getTechGlassBorder(isDarkMode: boolean): string {
   return getTechTokens(isDarkMode).panelBorder;
 }
 
+/** Fundo da área de conteúdo — liso, igual ao site (`--mf-bg`). */
 export function getDashboardCanvasStyle(isDarkMode: boolean): ViewStyle {
   const t = getTechTokens(isDarkMode);
-  if (Platform.OS === 'web') {
-    return {
-      backgroundColor: t.canvasBase,
-      // @ts-expect-error web-only
-      backgroundImage: `${t.gridCss}, ${t.canvasGradientCss}`,
-    };
-  }
   return { backgroundColor: t.canvasBase };
 }
 
@@ -118,13 +106,7 @@ export function mfTechPanelChrome(
     borderRadius: isChart ? mfRadius.sm : mfRadius.md,
     borderWidth: 1,
     borderColor: isInset ? t.insetBorder : isAccent ? t.panelBorder : t.insetBorder,
-    backgroundColor: isChart
-      ? isDarkMode
-        ? 'rgba(4, 8, 14, 0.92)'
-        : 'rgba(241, 245, 249, 0.95)'
-      : isInset
-        ? t.insetFill
-        : t.panelFill,
+    backgroundColor: isChart || isInset ? t.insetFill : t.panelFill,
     overflow: isAccent ? 'visible' : 'hidden',
     ...(isAccent
       ? { borderTopWidth: 2, borderTopColor: t.accent }
@@ -134,23 +116,16 @@ export function mfTechPanelChrome(
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     return {
       ...base,
-      // @ts-expect-error web-only
-      backdropFilter: isChart ? 'none' : 'blur(24px) saturate(1.25)',
-      WebkitBackdropFilter: isChart ? 'none' : 'blur(24px) saturate(1.25)',
-      boxShadow: isInset
-        ? 'inset 0 2px 12px rgba(0,0,0,0.25)'
-        : isAccent
-          ? t.panelShadow
-          : '0 4px 24px rgba(0,0,0,0.2)',
+      boxShadow: isInset ? 'none' : t.panelShadow,
     };
   }
   return base;
 }
 
-/** Fundo sólido para modais full-screen — sem blur (evita grid “vazando” no web). */
+/** Fundo sólido para modais full-screen. */
 export function mfTechOpaqueShell(isDarkMode: boolean): ViewStyle {
   const t = getTechTokens(isDarkMode);
-  const fill = isDarkMode ? '#0a1018' : '#ffffff';
+  const fill = t.panelFill;
   return {
     flex: 1,
     width: '100%',
@@ -160,7 +135,6 @@ export function mfTechOpaqueShell(isDarkMode: boolean): ViewStyle {
     overflow: 'hidden',
     ...(Platform.OS === 'web'
       ? {
-          // @ts-expect-error web-only — sem backdrop-filter
           boxShadow: t.panelShadow,
         }
       : {}),
@@ -171,7 +145,7 @@ export function mfTechOpaqueShell(isDarkMode: boolean): ViewStyle {
 export function mfTechCanvasScrim(isDarkMode: boolean): ViewStyle {
   return {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: isDarkMode ? 'rgba(3, 5, 8, 0.78)' : 'rgba(15, 23, 42, 0.42)',
+    backgroundColor: isDarkMode ? 'rgba(5, 5, 14, 0.72)' : 'rgba(20, 20, 43, 0.45)',
   };
 }
 
@@ -204,7 +178,7 @@ export function getTechKpiShadow(isDarkMode: boolean): string {
 
 /** Fundo dos KPIs — mesma elevação visual em todos os cards. */
 export function mfTechKpiSurfaceFill(isDarkMode: boolean): string {
-  return isDarkMode ? '#1a2838' : '#ffffff';
+  return getTechTokens(isDarkMode).panelFill;
 }
 
 /** Estilo do invólucro (fundo + borda). Sombra: `MfTechKpiCard` ou `getTechKpiShadow` no web. */
@@ -214,7 +188,7 @@ export function mfTechKpiCardStyle(
 ): ViewStyle {
   const t = getTechTokens(isDarkMode);
   const featured = level === 'featured';
-  const borderColor = isDarkMode ? 'rgba(148, 163, 184, 0.24)' : 'rgba(15, 23, 42, 0.09)';
+  const borderColor = t.panelBorder;
 
   const base: ViewStyle = {
     backgroundColor: mfTechKpiSurfaceFill(isDarkMode),
@@ -242,7 +216,6 @@ export function mfTechKpiCardStyle(
     const shadow = getTechKpiShadow(isDarkMode);
     return {
       ...base,
-      // @ts-expect-error web-only
       boxShadow: shadow,
       // @ts-expect-error web-only
       WebkitBoxShadow: shadow,
@@ -331,7 +304,6 @@ export function mfTechKpiElevation(
   const featured = level === 'featured';
   if (Platform.OS === 'web') {
     return {
-      // @ts-expect-error web-only
       boxShadow: featured ? t.kpiFeaturedShadow : t.kpiMetricShadow,
     };
   }
@@ -351,24 +323,8 @@ export function getGlassFill(
   intensity: GlassIntensity = 'medium',
 ): string {
   const t = getTechTokens(isDarkMode);
-  if (isDarkMode) {
-    switch (intensity) {
-      case 'subtle':
-        return 'rgba(8, 12, 20, 0.72)';
-      case 'strong':
-        return t.panelFill;
-      default:
-        return 'rgba(10, 15, 24, 0.86)';
-    }
-  }
-  switch (intensity) {
-    case 'subtle':
-      return 'rgba(255, 255, 255, 0.78)';
-    case 'strong':
-      return t.panelFill;
-    default:
-      return 'rgba(255, 255, 255, 0.88)';
-  }
+  // Sem vidro translúcido no design novo: superfícies sólidas (card / card-muted).
+  return intensity === 'subtle' ? t.insetFill : t.panelFill;
 }
 
 export function getGlassBorder(_theme: Theme, isDarkMode: boolean): string {
@@ -402,9 +358,6 @@ export function mfGlassChrome(
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     return {
       ...base,
-      // @ts-expect-error web-only
-      backdropFilter: 'blur(20px) saturate(1.15)',
-      WebkitBackdropFilter: 'blur(20px) saturate(1.15)',
       boxShadow: t.panelShadow,
     };
   }

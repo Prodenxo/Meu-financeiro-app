@@ -11,9 +11,35 @@ export interface MfBaseProps {
 
 export interface MfCardProps extends MfBaseProps {
   children: ReactNode;
-  /** default = surface + borda; elevated = sombra; outline = só borda */
-  variant?: 'default' | 'elevated' | 'outline';
+  /** default = card + borda + sombra suave; elevated = sombra "pop"; outline = só borda; muted = fundo suave sem sombra */
+  variant?: 'default' | 'elevated' | 'outline' | 'muted';
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  /** Cabeçalho opcional (igual ao `.cardHeader` do site). */
+  title?: string;
+  subtitle?: string;
+  /** Ação à direita do título (botão, pill…). */
+  right?: ReactNode;
+}
+
+export type MfButtonVariant = 'primary' | 'outline' | 'ghost' | 'danger';
+export type MfButtonSize = 'md' | 'sm';
+
+export interface MfButtonProps extends MfBaseProps {
+  label: string;
+  onPress?: () => void;
+  variant?: MfButtonVariant;
+  size?: MfButtonSize;
+  /** Ocupa toda a largura. */
+  block?: boolean;
+  disabled?: boolean;
+  /** Mostra spinner no lugar do ícone e bloqueia o toque. */
+  loading?: boolean;
+  /** Ícone à esquerda do texto. */
+  icon?: ReactNode;
+  /** Ícone à direita do texto. */
+  iconRight?: ReactNode;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export interface MfMetricTileProps extends MfBaseProps {

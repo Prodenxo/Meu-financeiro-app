@@ -383,7 +383,8 @@ export default function AppLayout() {
           currentScreen={currentScreen}
           showMeiTab={showMeiTab}
           navigateTo={navigateTo}
-          showTopNav={hasGlobalNav}
+          openDrawer={openDrawer}
+          showTopNav={!shellLocked}
         />
         {!shellLocked ? (
           <SideDrawer
@@ -428,6 +429,6 @@ const createStyles = (isDarkMode: boolean) =>
     },
     bootHint: {
       fontSize: 14,
-      color: isDarkMode ? '#94A3B8' : '#64748B',
+      color: getTheme(isDarkMode).textSecondary,
     },
   });

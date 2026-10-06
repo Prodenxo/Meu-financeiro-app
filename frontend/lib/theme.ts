@@ -31,29 +31,55 @@ export const mfTypography = {
 
 export type FinanceSemantic = 'open' | 'received' | 'overdue' | 'forecast';
 
+/**
+ * Paleta = tokens do site (`web/app/globals.css`).
+ * Mapeamento: `background`=--mf-bg · `surface`=--mf-bg-elevated · `card`=--mf-card ·
+ * `cardMuted`/`backgroundMuted`=--mf-card-muted · `primaryLight`=--mf-primary-soft ·
+ * `primaryDark`=--mf-primary-hover · `error`=--mf-danger.
+ */
 export interface Theme {
   background: string;
-  /** Áreas secundárias (listas, inputs agrupados) — não substitui o fundo principal em light premium. */
+  /** Áreas secundárias (listas, inputs agrupados) — igual a `cardMuted`. */
   backgroundMuted: string;
   surface: string;
   card: string;
+  /** Fundo suave dentro de cards (--mf-card-muted). */
+  cardMuted: string;
 
   text: string;
   textSecondary: string;
   textTertiary: string;
+  /** Texto sobre o card escuro de saldo / botão primário. */
+  textOnDark: string;
+  textOnDark2: string;
 
   border: string;
   borderLight: string;
+  /** Borda de inputs e botões outline (--mf-border-strong). */
+  borderStrong: string;
 
   primary: string;
+  /** Fundo suave da marca (--mf-primary-soft). */
   primaryLight: string;
+  /** Hover/pressed do primário (--mf-primary-hover). */
   primaryDark: string;
+  primaryHover: string;
+  primarySoft: string;
+  primarySoft2: string;
+  primaryRing: string;
+
+  /** Card escuro (saldo). */
+  navy: string;
+  navy2: string;
 
   success: string;
   successLight: string;
   error: string;
   errorLight: string;
   warning: string;
+  warningLight: string;
+  info: string;
+  infoLight: string;
 
   /** Semântica financeira (referência Assessor, paleta MF). */
   financeOpen: string;
@@ -84,106 +110,132 @@ export interface Theme {
   shadowColor: string;
 }
 
-/** Light premium: fundo branco, cards com borda suave e sombra leve. */
+/** Claro — igual ao `:root` do site: fundo lilás-claro, cards brancos, marca roxa. */
 export const lightTheme: Theme = {
-  background: '#FFFFFF',
-  backgroundMuted: '#F8FAFC',
-  surface: '#FFFFFF',
-  card: '#FFFFFF',
+  background: '#f5f5fa',
+  backgroundMuted: '#f7f7fb',
+  surface: '#ffffff',
+  card: '#ffffff',
+  cardMuted: '#f7f7fb',
 
-  text: '#0F172A',
-  textSecondary: '#64748B',
-  textTertiary: '#94A3B8',
+  text: '#16162a',
+  textSecondary: '#6b6b80',
+  textTertiary: '#9a9aaf',
+  textOnDark: '#ffffff',
+  textOnDark2: 'rgba(255, 255, 255, 0.72)',
 
-  border: '#E8ECF0',
-  borderLight: '#F1F5F9',
+  border: '#ececf3',
+  borderLight: '#f2f2f8',
+  borderStrong: '#dcdce8',
 
-  primary: '#2563EB',
-  primaryLight: '#DBEAFE',
-  primaryDark: '#1E40AF',
+  primary: '#5b4fe9',
+  primaryLight: '#eeedfb',
+  primaryDark: '#4d42d6',
+  primaryHover: '#4d42d6',
+  primarySoft: '#eeedfb',
+  primarySoft2: '#e3e1fa',
+  primaryRing: 'rgba(91, 79, 233, 0.35)',
 
-  success: '#10B981',
-  successLight: '#D1FAE5',
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
-  warning: '#F59E0B',
+  navy: '#14142b',
+  navy2: '#1e1e3f',
 
-  financeOpen: '#2563EB',
-  financeOpenLight: '#EFF6FF',
-  financeReceived: '#10B981',
-  financeReceivedLight: '#D1FAE5',
-  financeOverdue: '#EF4444',
-  financeOverdueLight: '#FEE2E2',
-  financeForecast: '#1E40AF',
-  financeForecastLight: '#DBEAFE',
+  success: '#16a34a',
+  successLight: '#e8f7ee',
+  error: '#ef4444',
+  errorLight: '#fdecec',
+  warning: '#f59e0b',
+  warningLight: '#fff4e5',
+  info: '#2563eb',
+  infoLight: '#e8f0fe',
 
-  inputBackground: '#FFFFFF',
-  inputBorder: '#E2E8F0',
-  inputText: '#0F172A',
-  placeholder: '#94A3B8',
+  financeOpen: '#2563eb',
+  financeOpenLight: '#e8f0fe',
+  financeReceived: '#16a34a',
+  financeReceivedLight: '#e8f7ee',
+  financeOverdue: '#ef4444',
+  financeOverdueLight: '#fdecec',
+  financeForecast: '#5b4fe9',
+  financeForecastLight: '#eeedfb',
 
-  calendarBackground: '#FFFFFF',
-  calendarText: '#334155',
-  calendarSelected: '#2563EB',
-  calendarToday: '#2563EB',
+  inputBackground: '#ffffff',
+  inputBorder: '#dcdce8',
+  inputText: '#16162a',
+  placeholder: '#9a9aaf',
 
-  tabBarBackground: '#FFFFFF',
-  tabBarBorder: '#E8ECF0',
-  tabActive: '#2563EB',
-  tabInactive: '#94A3B8',
+  calendarBackground: '#ffffff',
+  calendarText: '#16162a',
+  calendarSelected: '#5b4fe9',
+  calendarToday: '#5b4fe9',
 
-  shadowColor: '#0F172A',
+  tabBarBackground: '#ffffff',
+  tabBarBorder: '#ececf3',
+  tabActive: '#5b4fe9',
+  tabInactive: '#9a9aaf',
+
+  shadowColor: '#14142b',
 };
 
-/**
- * Dark: fundo preto, superfícies em camadas azul‑ardósia; acentos azuis.
- */
+/** Escuro — igual ao `[data-theme='dark']` do site: azul-marinho profundo, marca lilás. */
 export const darkTheme: Theme = {
-  background: '#000000',
-  backgroundMuted: '#0a0f16',
-  surface: '#151b26',
-  card: '#1a2230',
+  background: '#0f0f1c',
+  backgroundMuted: '#1e1e36',
+  surface: '#161628',
+  card: '#181830',
+  cardMuted: '#1e1e36',
 
-  text: '#f1f5f9',
-  textSecondary: '#94a3b8',
-  textTertiary: '#64748b',
+  text: '#f1f1f7',
+  textSecondary: '#a4a4bd',
+  textTertiary: '#74748f',
+  textOnDark: '#ffffff',
+  textOnDark2: 'rgba(255, 255, 255, 0.72)',
 
-  border: '#2d3a4d',
-  borderLight: '#3d4f66',
+  border: '#262640',
+  borderLight: '#1f1f36',
+  borderStrong: '#33334f',
 
-  primary: '#60a5fa',
-  primaryLight: 'rgba(59, 130, 246, 0.22)',
-  primaryDark: '#2563eb',
+  primary: '#8b82f2',
+  primaryLight: 'rgba(139, 130, 242, 0.16)',
+  primaryDark: '#a19af5',
+  primaryHover: '#a19af5',
+  primarySoft: 'rgba(139, 130, 242, 0.16)',
+  primarySoft2: 'rgba(139, 130, 242, 0.26)',
+  primaryRing: 'rgba(139, 130, 242, 0.45)',
+
+  navy: '#23234a',
+  navy2: '#2d2d5c',
 
   success: '#34d399',
-  successLight: 'rgba(52, 211, 153, 0.16)',
+  successLight: 'rgba(52, 211, 153, 0.14)',
   error: '#f87171',
-  errorLight: 'rgba(248, 113, 113, 0.16)',
+  errorLight: 'rgba(248, 113, 113, 0.14)',
   warning: '#fbbf24',
+  warningLight: 'rgba(251, 191, 36, 0.14)',
+  info: '#60a5fa',
+  infoLight: 'rgba(96, 165, 250, 0.14)',
 
   financeOpen: '#60a5fa',
-  financeOpenLight: 'rgba(59, 130, 246, 0.18)',
+  financeOpenLight: 'rgba(96, 165, 250, 0.14)',
   financeReceived: '#34d399',
-  financeReceivedLight: 'rgba(52, 211, 153, 0.16)',
+  financeReceivedLight: 'rgba(52, 211, 153, 0.14)',
   financeOverdue: '#f87171',
-  financeOverdueLight: 'rgba(248, 113, 113, 0.16)',
-  financeForecast: '#93c5fd',
-  financeForecastLight: 'rgba(147, 197, 253, 0.14)',
+  financeOverdueLight: 'rgba(248, 113, 113, 0.14)',
+  financeForecast: '#8b82f2',
+  financeForecastLight: 'rgba(139, 130, 242, 0.16)',
 
-  inputBackground: '#0a0a0a',
-  inputBorder: '#2d3a4d',
-  inputText: '#f1f5f9',
-  placeholder: '#64748b',
+  inputBackground: '#161628',
+  inputBorder: '#33334f',
+  inputText: '#f1f1f7',
+  placeholder: '#74748f',
 
-  calendarBackground: '#151b26',
-  calendarText: '#e2e8f0',
-  calendarSelected: '#3b82f6',
-  calendarToday: '#60a5fa',
+  calendarBackground: '#181830',
+  calendarText: '#f1f1f7',
+  calendarSelected: '#8b82f2',
+  calendarToday: '#8b82f2',
 
-  tabBarBackground: '#000000',
-  tabBarBorder: '#1f2937',
-  tabActive: '#60a5fa',
-  tabInactive: '#64748b',
+  tabBarBackground: '#161628',
+  tabBarBorder: '#262640',
+  tabActive: '#8b82f2',
+  tabInactive: '#74748f',
 
   shadowColor: '#000000',
 };
@@ -222,8 +274,8 @@ export function getFinanceSemanticTint(theme: Theme, semantic: FinanceSemantic):
   }
 }
 
-/** Sombra difusa para MfCard — light premium vs dark elevado. */
-export function mfCardElevation(theme: Theme, isDarkMode: boolean): Pick<
+/** Sombra padrão do card (--mf-shadow do site): quase imperceptível no claro, mais presente no escuro. */
+export function mfCardShadow(theme: Theme, isDarkMode: boolean): Pick<
   ViewStyle,
   'shadowColor' | 'shadowOffset' | 'shadowOpacity' | 'shadowRadius' | 'elevation'
 > {
@@ -231,27 +283,58 @@ export function mfCardElevation(theme: Theme, isDarkMode: boolean): Pick<
     return {
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.45,
-      shadowRadius: 14,
-      elevation: 6,
+      shadowOpacity: 0.28,
+      shadowRadius: 20,
+      elevation: 3,
     };
   }
   return {
     shadowColor: theme.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 1,
   };
+}
+
+/** Sombra "pop" (--mf-shadow-pop): menus, modais e `MfCard variant="elevated"`. */
+export function mfCardElevation(theme: Theme, isDarkMode: boolean): Pick<
+  ViewStyle,
+  'shadowColor' | 'shadowOffset' | 'shadowOpacity' | 'shadowRadius' | 'elevation'
+> {
+  if (isDarkMode) {
+    return {
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 16 },
+      shadowOpacity: 0.55,
+      shadowRadius: 48,
+      elevation: 8,
+    };
+  }
+  return {
+    shadowColor: theme.shadowColor,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.14,
+    shadowRadius: 40,
+    elevation: 4,
+  };
+}
+
+/** CSS `box-shadow` equivalente (web). */
+export function mfWebShadow(isDarkMode: boolean, level: 'card' | 'pop' = 'card'): string {
+  if (level === 'pop') {
+    return isDarkMode ? '0 16px 48px rgba(0, 0, 0, 0.55)' : '0 12px 40px rgba(20, 20, 43, 0.14)';
+  }
+  return isDarkMode
+    ? '0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.28)'
+    : '0 1px 2px rgba(20, 20, 43, 0.04), 0 4px 16px rgba(20, 20, 43, 0.04)';
 }
 
 /** Agenda / modais — sombra visível (overflow não corta no web). */
 export function mfAgendaPanelChrome(isDarkMode: boolean): ViewStyle {
   const chrome: ViewStyle = { overflow: 'visible' };
   if (typeof document !== 'undefined') {
-    chrome.boxShadow = isDarkMode
-      ? '0 12px 48px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.42)'
-      : '0 8px 32px rgba(15, 23, 42, 0.14), 0 2px 10px rgba(15, 23, 42, 0.08)';
+    chrome.boxShadow = mfWebShadow(isDarkMode, 'pop');
   }
   return chrome;
 }

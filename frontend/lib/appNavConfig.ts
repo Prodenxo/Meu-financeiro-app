@@ -133,3 +133,25 @@ export function resolveAppScreenFromPath(pathname?: string | null): AppScreenNam
 export function filterNavItems(items: AppNavItem[], showMei: boolean): AppNavItem[] {
   return items.filter((item) => !item.requiresMeiAccess || showMei);
 }
+
+/** Abas fixas do menu inferior (celular). A área MEI não entra no app. */
+export const BOTTOM_NAV_SCREENS: AppScreenName[] = ['Dashboard', 'Transacoes', 'Contas', 'Agenda'];
+
+/** Rótulo curto para caber na aba. */
+export const BOTTOM_NAV_SHORT_LABEL: Partial<Record<AppScreenName, string>> = {
+  Dashboard: 'Início',
+};
+
+export type BottomNavItem = AppNavItem & { shortLabel: string };
+
+/** Itens do menu inferior, na ordem das abas, com rótulo curto. */
+export function getBottomNavItems(items: AppNavItem[] = APP_NAV_ITEMS): BottomNavItem[] {
+  return BOTTOM_NAV_SCREENS.map((screen) => items.find((i) => i.screen === screen))
+    .filter((item): item is AppNavItem => Boolean(item))
+    .map((item) => ({ ...item, shortLabel: BOTTOM_NAV_SHORT_LABEL[item.screen] ?? item.label }));
+}
+
+/** Telas que não têm aba própria ficam sob "Mais" (menu lateral). */
+export function isBottomNavMenuActive(current: AppScreenName): boolean {
+  return !BOTTOM_NAV_SCREENS.includes(current);
+}

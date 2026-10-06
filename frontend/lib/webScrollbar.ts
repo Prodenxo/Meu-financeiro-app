@@ -1,15 +1,15 @@
 import { Platform } from 'react-native';
-import type { Theme } from './theme';
+import { darkTheme, type Theme } from './theme';
 
-/** Scrollbar — modo escuro (padrão tech / canvas #030508). */
-export const MF_SCROLL_TRACK_DARK = '#151b26';
-export const MF_SCROLL_THUMB_DARK = '#94a3b8';
-export const MF_SCROLL_THUMB_HOVER_DARK = '#cbd5e1';
+/** Scrollbar — modo escuro (fundo #0f0f1c). */
+export const MF_SCROLL_TRACK_DARK = '#161628';
+export const MF_SCROLL_THUMB_DARK = '#33334f';
+export const MF_SCROLL_THUMB_HOVER_DARK = '#74748f';
 
-/** Scrollbar — modo claro (canvas #e4eaf3, cards brancos). */
-export const MF_SCROLL_TRACK_LIGHT = '#e8eef4';
-export const MF_SCROLL_THUMB_LIGHT = '#c5d0e0';
-export const MF_SCROLL_THUMB_HOVER_LIGHT = '#94a3b8';
+/** Scrollbar — modo claro (fundo #f5f5fa, cards brancos). */
+export const MF_SCROLL_TRACK_LIGHT = '#ececf3';
+export const MF_SCROLL_THUMB_LIGHT = '#dcdce8';
+export const MF_SCROLL_THUMB_HOVER_LIGHT = '#9a9aaf';
 
 /** @deprecated Use tokens por tema via `getScrollTokens`. */
 export const MF_SCROLL_TRACK = MF_SCROLL_TRACK_DARK;
@@ -37,7 +37,7 @@ export function getScrollTokens(isDarkMode: boolean) {
 
 export function isThemeDark(theme?: Theme): boolean {
   if (!theme) return true;
-  return theme.background === '#000000';
+  return theme.background === darkTheme.background;
 }
 
 /** Sincroniza variáveis CSS globais (`index.html`) com o tema ativo. */

@@ -1,111 +1,108 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '@/store/themeStore';
-import { getTheme } from '@/lib/theme';
-import { APP_NAV_ITEMS, filterNavItems } from '@/lib/appNavConfig';
+import { mfRadius, mfWebShadow, type Theme } from '@/lib/theme';
+import { getBottomNavItems, isBottomNavMenuActive } from '@/lib/appNavConfig';
 import type { AppScreenName } from '@/lib/navigationContext';
-import { SHELL_NAV_HEIGHT_NATIVE } from './shellTokens';
+import { useMfTheme } from '../ui/useMfTheme';
+import { SHELL_BOTTOM_NAV_HEIGHT } from './shellTokens';
 
 export type BottomNavAction = AppScreenName | 'Menu';
 
 type Props = {
   current: AppScreenName;
-  showMeiTab: boolean;
   onSelect: (action: BottomNavAction) => void;
 };
 
-const PRIMARY_TAB_SCREENS: AppScreenName[] = ['Dashboard', 'Transacoes', 'Agenda'];
+type TabProps = {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  active: boolean;
+  onPress: () => void;
+  styles: ReturnType<typeof createStyles>;
+  theme: Theme;
+  accessibilityLabel: string;
+};
 
-export default function AppBottomNav({ current, showMeiTab, onSelect }: Props) {
+function Tab({ label, icon, active, onPress, styles, theme, accessibilityLabel }: TabProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+        <Ionicons name={icon} size={22} color={active ? theme.primary : theme.tabInactive} />
+      </View>
+      <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Menu inferior do app (celular e web estreito).
+ * Item ativo: ícone sobre fundo `primarySoft` + rótulo na cor da marca — igual ao item ativo da sidebar do site.
+ */
+export default function AppBottomNav({ current, onSelect }: Props) {
   const insets = useSafeAreaInsets();
-  const { isDarkMode } = useThemeStore();
-  const theme = useMemo(() => getTheme(isDarkMode), [isDarkMode]);
-  const styles = useMemo(() => createStyles(theme, insets.bottom), [theme, insets.bottom]);
-
-  const tabItems = useMemo(() => {
-    const filtered = filterNavItems(APP_NAV_ITEMS, showMeiTab);
-    const primary = filtered.filter((i) => PRIMARY_TAB_SCREENS.includes(i.screen));
-    const fourth = showMeiTab
-      ? filtered.find((i) => i.screen === 'MeuMei')
-      : filtered.find((i) => i.screen === 'Categorias');
-    return fourth ? [...primary, fourth] : primary;
-  }, [showMeiTab]);
-
-  const primaryScreens = tabItems.map((i) => i.screen);
-  const menuActive = !primaryScreens.includes(current);
+  const { theme, isDarkMode } = useMfTheme();
+  const styles = useMemo(
+    () => createStyles(theme, isDarkMode, insets.bottom),
+    [theme, isDarkMode, insets.bottom]
+  );
+  const items = useMemo(() => getBottomNavItems(), []);
+  const menuActive = isBottomNavMenuActive(current);
 
   return (
-    <View style={styles.bar} accessibilityRole="tablist">
-      {tabItems.map((item) => {
+    <View style={styles.bar} accessibilityRole="tablist" testID="app-bottom-nav">
+      {items.map((item) => {
         const active = current === item.screen;
-        const shortLabel =
-          item.screen === 'Dashboard'
-            ? 'Início'
-            : item.screen === 'Transacoes'
-              ? 'Lançamentos'
-              : item.screen === 'MeuMei'
-                ? 'MEI'
-                : item.label;
         return (
-          <Pressable
+          <Tab
             key={item.screen}
+            label={item.shortLabel}
+            icon={(active ? item.activeIcon : item.icon) as keyof typeof Ionicons.glyphMap}
+            active={active}
             onPress={() => onSelect(item.screen)}
-            style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            styles={styles}
+            theme={theme}
             accessibilityLabel={item.label}
-          >
-            <Ionicons
-              name={(active ? item.activeIcon : item.icon) as keyof typeof Ionicons.glyphMap}
-              size={22}
-              color={active ? theme.tabActive : theme.tabInactive}
-            />
-            <Text style={[styles.tabLabel, active && { color: theme.tabActive }]} numberOfLines={1}>
-              {shortLabel}
-            </Text>
-          </Pressable>
+          />
         );
       })}
-      <Pressable
+      <Tab
+        label="Mais"
+        icon={menuActive ? 'grid' : 'grid-outline'}
+        active={menuActive}
         onPress={() => onSelect('Menu')}
-        style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: menuActive }}
+        styles={styles}
+        theme={theme}
         accessibilityLabel="Mais opções"
-      >
-        <Ionicons
-          name={menuActive ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'}
-          size={22}
-          color={menuActive ? theme.tabActive : theme.tabInactive}
-        />
-        <Text style={[styles.tabLabel, menuActive && { color: theme.tabActive }]}>Mais</Text>
-      </Pressable>
+      />
     </View>
   );
 }
 
-function createStyles(theme: ReturnType<typeof getTheme>, bottomInset: number) {
+function createStyles(theme: Theme, isDarkMode: boolean, bottomInset: number) {
   return StyleSheet.create({
     bar: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'space-around',
-      minHeight: SHELL_NAV_HEIGHT_NATIVE + bottomInset,
-      paddingBottom: Math.max(bottomInset, 8),
-      paddingTop: 8,
+      minHeight: SHELL_BOTTOM_NAV_HEIGHT + bottomInset,
+      paddingBottom: Math.max(bottomInset, 6),
+      paddingTop: 6,
+      paddingHorizontal: 4,
       backgroundColor: theme.tabBarBackground,
       borderTopWidth: 1,
       borderTopColor: theme.tabBarBorder,
       ...(Platform.OS === 'web'
-        ? ({
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
-          } as unknown as ViewStyle)
+        ? ({ boxShadow: mfWebShadow(isDarkMode, 'card') } as Record<string, unknown>)
         : {}),
     },
     tab: {
@@ -113,15 +110,30 @@ function createStyles(theme: ReturnType<typeof getTheme>, bottomInset: number) {
       alignItems: 'center',
       justifyContent: 'center',
       gap: 2,
-      paddingVertical: 4,
+      paddingVertical: 2,
+      minWidth: 0,
     },
-    tabLabel: {
-      fontSize: 10,
+    iconWrap: {
+      width: 48,
+      height: 28,
+      borderRadius: mfRadius.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconWrapActive: {
+      backgroundColor: theme.primarySoft,
+    },
+    label: {
+      fontSize: 11,
       fontWeight: '600',
       color: theme.tabInactive,
+      maxWidth: '100%',
+    },
+    labelActive: {
+      color: theme.primary,
     },
     pressed: {
-      opacity: 0.75,
+      opacity: 0.7,
     },
   });
 }

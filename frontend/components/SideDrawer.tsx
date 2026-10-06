@@ -143,7 +143,7 @@ export default function SideDrawer<T extends string>({
     [theme, isDarkMode, tokens],
   );
 
-  const backdropTint = isDarkMode ? 'rgba(3, 5, 8, 0.78)' : 'rgba(15, 23, 42, 0.42)';
+  const backdropTint = isDarkMode ? 'rgba(5, 5, 14, 0.72)' : 'rgba(20, 20, 43, 0.45)';
   const canvasBg = isDarkMode ? SHELL_CANVAS_DARK : SHELL_CANVAS_LIGHT;
 
   return (
@@ -297,7 +297,7 @@ const createStyles = (
             boxShadow: tokens.panelShadow,
           } as ViewStyle)
         : {
-            shadowColor: isDarkMode ? '#000' : '#0f172a',
+            shadowColor: theme.shadowColor,
             shadowOffset: { width: 8, height: 0 },
             shadowOpacity: isDarkMode ? 0.55 : 0.18,
             shadowRadius: 24,
@@ -306,7 +306,7 @@ const createStyles = (
     },
     panelTint: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: isDarkMode ? 'rgba(34, 211, 238, 0.04)' : 'rgba(29, 78, 216, 0.03)',
+      backgroundColor: isDarkMode ? 'rgba(139, 130, 242, 0.04)' : 'rgba(91, 79, 233, 0.03)',
     },
     safeArea: {
       flex: 1,
