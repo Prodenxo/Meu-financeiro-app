@@ -1176,7 +1176,7 @@ function createFlowStyles (
       paddingHorizontal: mfSpacing.lg,
       paddingVertical: mfSpacing.xl,
     },
-    formModalBackdrop: { ...StyleSheet.absoluteFillObject },
+    formModalBackdrop: { ...StyleSheet.absoluteFill },
     formModalShell: {
       zIndex: 1,
       maxHeight: '92%',

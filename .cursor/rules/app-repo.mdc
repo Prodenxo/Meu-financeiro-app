@@ -5,7 +5,7 @@ alwaysApply: true
 
 # AGENTS.md — Meu Financeiro (app de celular)
 
-Este repositório tem **só o app de celular** (Expo SDK 55 / React Native, em `frontend/`).
+Este repositório tem **só o app de celular** (Expo SDK 57 / React Native 0.86, em `frontend/`).
 
 ## Backend e banco (regra fixa)
 

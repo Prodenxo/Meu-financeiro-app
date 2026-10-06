@@ -77,6 +77,6 @@ export function MfGlassCard({
 
 const styles = StyleSheet.create({
   veil: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

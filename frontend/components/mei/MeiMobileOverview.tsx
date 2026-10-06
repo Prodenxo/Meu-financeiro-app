@@ -125,7 +125,7 @@ function createStyles (
       color: theme.textTertiary,
     },
     loading: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: isDarkMode ? 'rgba(3,5,8,0.55)' : 'rgba(255,255,255,0.65)',
       alignItems: 'center',
       justifyContent: 'center',

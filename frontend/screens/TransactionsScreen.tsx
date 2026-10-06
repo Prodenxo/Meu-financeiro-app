@@ -1145,11 +1145,11 @@ function TransactionModal({
         </KeyboardAvoidingView>
         {calendarVisible ? (
           <View
-            style={[StyleSheet.absoluteFillObject, { zIndex: 1000, elevation: 24 }]}
+            style={[StyleSheet.absoluteFill, { zIndex: 1000, elevation: 24 }]}
             pointerEvents="box-none"
           >
             <Pressable
-              style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
+              style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
               onPress={() => setCalendarVisible(false)}
             />
             <View
@@ -2166,7 +2166,7 @@ function InlineTransactionForm({
       >
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Pressable
-            style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
+            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
             onPress={() => setCalendarVisible(false)}
           />
           <View style={{ width: '100%', maxWidth: 400, paddingHorizontal: 16, zIndex: 1 }} pointerEvents="box-none">
@@ -4739,7 +4739,7 @@ const createModalStyles = (theme: ReturnType<typeof getTheme>, useDialogLayout =
       : {}),
   },
   dialogBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   dialogCard: {

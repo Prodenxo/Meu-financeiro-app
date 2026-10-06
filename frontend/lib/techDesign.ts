@@ -144,7 +144,7 @@ export function mfTechOpaqueShell(isDarkMode: boolean): ViewStyle {
 /** Véu sobre o grid do canvas (modais / overlays). */
 export function mfTechCanvasScrim(isDarkMode: boolean): ViewStyle {
   return {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: isDarkMode ? 'rgba(5, 5, 14, 0.72)' : 'rgba(20, 20, 43, 0.45)',
   };
 }

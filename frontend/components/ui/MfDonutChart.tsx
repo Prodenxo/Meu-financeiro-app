@@ -89,7 +89,7 @@ function createStyles(theme: ReturnType<typeof useMfTheme>['theme']) {
       justifyContent: 'center',
     },
     center: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 8,

@@ -1,4 +1,6 @@
-import type { Router } from 'expo-router'
+import type { useRouter } from 'expo-router'
+
+type Router = ReturnType<typeof useRouter>
 
 /** Rotas de configurações — URLs reais no web (ex.: /configuracoes/solicitacoes). */
 export const SETTINGS_ROUTES = {

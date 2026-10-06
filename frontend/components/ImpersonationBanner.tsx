@@ -154,7 +154,7 @@ const createStyles = (
           }),
     },
     glassTint: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: tintOverlay,
     },
     content: {

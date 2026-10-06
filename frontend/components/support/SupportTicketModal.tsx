@@ -220,7 +220,7 @@ export default function SupportTicketModal({
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} accessibilityLabel="Fechar modal" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Fechar modal" />
         <View style={[mfSitePanel(isDarkMode), styles.sheet]}>
           <View style={styles.hero}>
             <View style={styles.heroIconWrap}>

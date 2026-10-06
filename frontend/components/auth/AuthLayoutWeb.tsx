@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
   heroGlow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: mfRadius.xl,
   },
   heroCopy: {

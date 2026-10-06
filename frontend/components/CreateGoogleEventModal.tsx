@@ -1054,7 +1054,7 @@ function createStyles(
         : {}),
     },
     backdropPressable: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.72)' : 'rgba(15, 23, 42, 0.55)',
     },
     dialogShell: {
@@ -1461,13 +1461,13 @@ function createStyles(
       backgroundColor: isDarkMode ? 'rgba(0,0,0,0.38)' : 'rgba(15,23,42,0.28)',
     },
     timePickerOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       zIndex: 30,
       justifyContent: 'center',
       alignItems: 'center',
     },
     timePickerBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: isDarkMode ? 'rgba(0,0,0,0.45)' : 'rgba(15,23,42,0.32)',
     },
     timePickerCenter: {

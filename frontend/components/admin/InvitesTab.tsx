@@ -959,7 +959,7 @@ const createStyles = (
       padding: isDesktop ? 24 : 0,
     },
     modalBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.45)',
     },
     modalPanel: {

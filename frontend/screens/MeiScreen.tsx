@@ -5585,7 +5585,7 @@ const createStyles = (
           position: 'relative',
         },
     overviewLoadingOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: 12,
       zIndex: 10,
       justifyContent: 'center',

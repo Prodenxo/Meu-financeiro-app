@@ -39,7 +39,7 @@ function NativeHeroWash({ isDarkMode, gradientId }: NativeHeroWashProps) {
       ];
 
   return (
-    <Svg width="100%" height="100%" style={StyleSheet.absoluteFillObject} pointerEvents="none">
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
         <LinearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
           {stops.map((stop) => (

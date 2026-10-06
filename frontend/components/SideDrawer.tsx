@@ -265,7 +265,7 @@ const createStyles = (
 
   return StyleSheet.create({
     backdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     drawerShell: {
       position: 'absolute',
@@ -305,7 +305,7 @@ const createStyles = (
           }),
     },
     panelTint: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: isDarkMode ? 'rgba(139, 130, 242, 0.04)' : 'rgba(91, 79, 233, 0.03)',
     },
     safeArea: {
