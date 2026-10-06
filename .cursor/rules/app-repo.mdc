@@ -1,0 +1,32 @@
+---
+description: Regras do repo do app de celular — backend e banco ficam só no Meu-financeiro-clone
+alwaysApply: true
+---
+
+# AGENTS.md — Meu Financeiro (app de celular)
+
+Este repositório tem **só o app de celular** (Expo SDK 55 / React Native, em `frontend/`).
+
+## Backend e banco (regra fixa)
+
+- **API:** usar somente `..\Meu-financeiro-clone\backend` (Express, porta 3333). Não criar backend, rotas ou serviços neste repo; rota nova é feita no `Meu-financeiro-clone`.
+- **Banco:** o mesmo Supabase do site (nuvem). O app conecta via `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` em `frontend/.env`. Migrations e Edge Functions ficam somente em `..\Meu-financeiro-clone\supabase`. Não criar pasta `supabase/` aqui.
+- **Site Next (referência de design e funcionalidades):** `..\Meu-financeiro-clone\web` — tokens em `web/app/globals.css`, regras de negócio em `web/lib/finance/*`.
+
+## Rodar
+
+- `npm run dev` na raiz: sobe a API do `Meu-financeiro-clone` (se a porta 3333 estiver livre) e o Expo em modo LAN.
+- Celular: Expo Go no mesmo Wi-Fi. Em `frontend/.env`, `EXPO_PUBLIC_MEI_API_URL_DEV=http://<IP-do-PC>:3333` (o celular não enxerga `localhost`).
+- Gates antes de commit: `npm run lint`, `npm run typecheck`, `npm test` (em `frontend/`).
+
+## Produto
+
+- Objetivo atual: trazer o design novo e as funcionalidades do site para o app, por etapas — (1) base visual: cores, botões, cards, menu inferior; (2) login; (3) visão geral; (4) contas + sincronização bancária; (5) transações; (6) categorias, orçamentos, agenda; (7) conta global, configurações, tutoriais, acessos.
+- **Área MEI fica de fora** (decisão do dono).
+- Sincronização bancária: grátis sem conta; 1ª conta R$ 19,90/mês + R$ 9,90/mês por adicional; PIX via Asaas; vender o benefício ("Sincronização automática", "Conectar meu banco"), não a tecnologia ("Open Finance"). Regras e endpoints vivem no backend do `Meu-financeiro-clone` (`/api/billing/open-finance/*`, `/api/open-finance/*`).
+
+## Convenções
+
+- Commits em PT-BR: linha 1 = ícone + `tipo: assunto` (ver `.cursor/rules/commit-messages-ptbr.mdc`), última linha `by: Leonardo`.
+- `git push`, PRs e releases: só com pedido explícito do dono.
+- Ticket ScrumHub: antes de terminar uma alteração, gravar `~/.cursor/scrumhub/nota-em-andamento-meu-financeiro-app.txt` (1ª linha = título do que a pessoa vê; resto = descrição). Estado do robô deste repo: `.ticket-state-meu-financeiro-app.json` (separado do site).

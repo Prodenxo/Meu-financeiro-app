@@ -6,12 +6,12 @@
  * - Só conta arquivo de código (backend/, frontend/, web/, supabase/). Doc,
  *   .gitignore, .cursor/, README e afins não abrem ticket.
  * - Remoção pura (só arquivos apagados) não abre ticket.
- * - Enquanto não houver commit novo, o mesmo ticket é atualizado em vez de
- *   abrir outro. Commit novo = ticket novo.
+ * - Reaproveita ticket recente (12h) ou ticket interno **pendente** com o mesmo
+ *   título — evita fila cheia de duplicatas (ex.: vários "Visão BPO…").
  * - Título e texto em linguagem de gente: o que a pessoa vê na tela.
- *   Se existir ~/.cursor/scrumhub/nota-em-andamento.txt, a primeira linha
- *   vira o título e o resto vira a descrição (e o arquivo é apagado).
- *   Sem essa nota, o ticket cai no resumo automático por arquivo.
+ *   Opcional: ~/.cursor/scrumhub/nota-em-andamento-meu-financeiro-app.txt (só diff local, alterada
+ *   nas últimas 2h) — 1ª linha = título; resto = descrição; apaga ao criar.
+ *   Commits já feitos ignoram a nota (evita título velho tipo “Visão BPO”).
  *
  * Login fica em ~/.cursor/scrumhub/scrumhub.local.env (nunca no git).
  * Uso manual: node .cursor/hooks/scrumhub-dev-ticket.mjs --commit <sha>
@@ -31,11 +31,14 @@ const PRIORIDADE = 'media';
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 const VALIDADE_TICKET_FIXADO_MS = 24 * 60 * 60 * 1000;
 const REAPROVEITAR_TICKET_MS = 12 * 60 * 60 * 1000;
+/** Nota manual só vale se o arquivo foi tocado recentemente (evita título fantasma). */
+const NOTA_TTL_MS = 2 * 60 * 60 * 1000;
 
 const configDir = path.join(os.homedir(), '.cursor', 'scrumhub');
 const envFile = path.join(configDir, 'scrumhub.local.env');
-const stateFile = path.join(configDir, '.ticket-state-meu-financeiro-clone.json');
-const ticketFixadoFile = path.join(configDir, 'ticket-fixado-meu-financeiro-clone.txt');
+const stateFile = path.join(configDir, '.ticket-state-meu-financeiro-app.json');
+const lockFile = path.join(configDir, '.ticket-lock-meu-financeiro-app');
+const ticketFixadoFile = path.join(configDir, 'ticket-fixado-meu-financeiro-app.txt');
 const credentialsHint = '~/.cursor/scrumhub/scrumhub.local.env';
 
 let repoRoot = '';
@@ -50,6 +53,21 @@ function commitPedido() {
   const indice = process.argv.indexOf('--commit');
   if (indice < 0) return '';
   return String(process.argv[indice + 1] || '').trim();
+}
+
+function fixTicketPedido() {
+  const indice = process.argv.indexOf('--fix-ticket');
+  if (indice < 0) return null;
+  const id = Number(process.argv[indice + 1]);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function argDiffRange() {
+  const fromIdx = process.argv.indexOf('--from');
+  const toIdx = process.argv.indexOf('--to');
+  const from = fromIdx >= 0 ? String(process.argv[fromIdx + 1] || '').trim() : '';
+  const to = toIdx >= 0 ? String(process.argv[toIdx + 1] || '').trim() : '';
+  return { from, to };
 }
 
 async function drainStdin() {
@@ -97,6 +115,43 @@ function writeState(state) {
   fs.writeFileSync(stateFile, `${JSON.stringify(state, null, 2)}\n`);
 }
 
+function processoVivo(pid) {
+  const n = Number(pid);
+  if (!Number.isFinite(n) || n <= 0) return false;
+  try {
+    process.kill(n, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function acquireHookLock() {
+  if (fs.existsSync(lockFile)) {
+    const pid = Number(String(fs.readFileSync(lockFile, 'utf8')).trim());
+    if (processoVivo(pid)) return null;
+    try {
+      fs.rmSync(lockFile, { force: true });
+    } catch { /* ignore */ }
+  }
+  try {
+    const fd = fs.openSync(lockFile, 'wx');
+    fs.writeFileSync(fd, `${process.pid}\n`);
+    return fd;
+  } catch {
+    return null;
+  }
+}
+
+function releaseHookLock(fd) {
+  try {
+    if (typeof fd === 'number') fs.closeSync(fd);
+  } catch { /* ignore */ }
+  try {
+    fs.rmSync(lockFile, { force: true });
+  } catch { /* ignore */ }
+}
+
 /* ---------- o que mudou ---------- */
 
 /** Só código de verdade. O resto (doc, config de editor, lock) não vira ticket. */
@@ -108,18 +163,44 @@ function ehImportante(file) {
   return CODIGO_RE.test(norm) && !IGNORAR_RE.test(norm);
 }
 
+function aplicarNameStatusNoMapa(map, rawLines) {
+  for (const line of rawLines) {
+    if (!line.trim()) continue;
+    const [code, ...rest] = line.split('\t');
+    const file = (rest.at(-1) || '').trim();
+    if (!file) continue;
+    map.set(
+      file,
+      code.startsWith('A') ? 'novo' : code.startsWith('D') ? 'removido' : code.startsWith('R') ? 'renomeado' : 'alterado',
+    );
+  }
+}
+
+/** Commits já mergeados no HEAD mas ainda sem ticket (working tree limpa). */
+function mudancasDesdeUltimoTicket(state) {
+  const head = git(['rev-parse', 'HEAD']);
+  if (!head) return { map: new Map(), head: '', modo: '' };
+
+  const ultimo = String(state.lastProcessedHead || state.head || '').trim();
+  if (ultimo === head) return { map: new Map(), head, modo: '' };
+
+  const map = new Map();
+  if (ultimo && git(['rev-parse', '--verify', ultimo])) {
+    aplicarNameStatusNoMapa(map, git(['diff', '--name-status', `${ultimo}..${head}`]).split(/\r?\n/));
+    return { map, head, modo: 'range' };
+  }
+
+  aplicarNameStatusNoMapa(map, git(['diff-tree', '--no-commit-id', '--name-status', '-r', head]).split(/\r?\n/));
+  return { map, head, modo: 'head' };
+}
+
 /** Map arquivo -> 'novo' | 'alterado' | 'removido' | 'renomeado' (só os importantes). */
 function mudancas() {
   const sha = commitPedido();
   const map = new Map();
 
   if (sha) {
-    for (const line of git(['diff-tree', '--no-commit-id', '--name-status', '-r', sha]).split(/\r?\n/)) {
-      const [code, ...rest] = line.split('\t');
-      const file = (rest.at(-1) || '').trim();
-      if (!file) continue;
-      map.set(file, code.startsWith('A') ? 'novo' : code.startsWith('D') ? 'removido' : code.startsWith('R') ? 'renomeado' : 'alterado');
-    }
+    aplicarNameStatusNoMapa(map, git(['diff-tree', '--no-commit-id', '--name-status', '-r', sha]).split(/\r?\n/));
   } else {
     const raw = git(['-c', 'core.quotepath=false', 'status', '--porcelain=v1', '--untracked-files=all']);
     for (const line of raw.split(/\r?\n/)) {
@@ -189,11 +270,12 @@ function agruparPorArea(map) {
   return grupos;
 }
 
-const notaFile = path.join(configDir, 'nota-em-andamento.txt');
+const notaFile = path.join(configDir, 'nota-em-andamento-meu-financeiro-app.txt');
 
 /** Primeira linha = título. O resto = o que mudou, em linguagem de gente. */
 function notaHumana() {
   if (!fs.existsSync(notaFile)) return null;
+  if (Date.now() - fs.statSync(notaFile).mtimeMs > NOTA_TTL_MS) return null;
   const raw = fs.readFileSync(notaFile, 'utf8').trim();
   if (!raw) return null;
   const [primeira, ...resto] = raw.split(/\r?\n/);
@@ -359,6 +441,39 @@ async function resolveStatusId(cookie) {
   return { result, statusId: Number(pendente?.id || list[0]?.id) || null };
 }
 
+function normalizeTituloTicket(nome) {
+  return String(nome || '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 48);
+}
+
+async function listarTicketsInternosProjeto(cookie) {
+  const result = await requestWithFallback(`/tickets-pai/projeto/${PROJECT_ID}`, { cookie });
+  const lista = Array.isArray(result.json?.data) ? result.json.data : (result.json?.tickets || []);
+  return lista.filter((t) => {
+    const v = t?.is_externo;
+    if (v === undefined || v === null) return true;
+    return v === false || Number(v) === 0;
+  });
+}
+
+/** Se já existir pendente com o mesmo título, atualiza em vez de criar outro. */
+async function buscarTicketInternoPendenteMesmoTitulo(cookie, nome) {
+  const alvo = normalizeTituloTicket(nome);
+  if (!alvo) return null;
+  const lista = await listarTicketsInternosProjeto(cookie);
+  const hit = lista.find((t) => {
+    if (normalizeTituloTicket(t.nome) !== alvo) return false;
+    const st = String(t?.status?.nome || t?.status_nome || '').toLowerCase();
+    return !st.includes('conclu');
+  });
+  return hit ? Number(hit.id) : null;
+}
+
 async function ticketEhExterno(id, cookie, state) {
   if ((state.criados || []).includes(id)) return false;
   const result = await requestWithFallback(`/tickets-pai/projeto/${PROJECT_ID}`, { cookie });
@@ -373,29 +488,54 @@ async function ticketEhExterno(id, cookie, state) {
 /* ---------- principal ---------- */
 
 async function main() {
+  const lockFd = acquireHookLock();
+  if (lockFd === null) return reply({});
+
   try {
     await drainStdin();
 
     repoRoot = resolveRepoRoot();
-    if (!repoRoot) return reply({});
+    if (!repoRoot) return reply({ user_message: 'Ticket ScrumHub: repositório não reconhecido (remote Meu-financeiro?).' });
 
-    const map = mudancas();
+    const fixTicketId = fixTicketPedido();
+    const diffRange = argDiffRange();
+    const stateEarly = readState();
+    let map = mudancas();
+    let modoCommit = commitPedido() ? 'commit' : 'working';
+    let head = git(['rev-parse', 'HEAD']);
+
+    if (fixTicketId && diffRange.from && diffRange.to) {
+      map = new Map();
+      aplicarNameStatusNoMapa(map, git(['diff', '--name-status', `${diffRange.from}..${diffRange.to}`]).split(/\r?\n/));
+      for (const file of [...map.keys()]) {
+        if (!ehImportante(file)) map.delete(file);
+      }
+      modoCommit = 'range';
+      head = diffRange.to;
+    } else if (!map.size && !commitPedido()) {
+      const desde = mudancasDesdeUltimoTicket(stateEarly);
+      map = desde.map;
+      if (desde.modo) {
+        modoCommit = desde.modo;
+        head = desde.head || head;
+      }
+    }
+
     const files = [...map.keys()].sort();
     if (!files.length) return reply({});
     if ([...map.values()].every((s) => s === 'removido')) return reply({});
 
     const sha = commitPedido();
-    const head = git(['rev-parse', 'HEAD']);
     const ticketAlvo = sha ? null : ticketFixado();
     const fingerprint = ticketAlvo
       ? impressaoDoConteudo(files)
-      : createHash('sha1').update(`${sha || head}|${files.map((f) => `${f}:${map.get(f)}`).join('|')}`).digest('hex');
+      : createHash('sha1').update(`${sha || head}|${modoCommit}|${files.map((f) => `${f}:${map.get(f)}`).join('|')}`).digest('hex');
 
     const state = readState();
     const jaRegistrado = ticketAlvo
       ? state.comentarios?.[ticketAlvo] === fingerprint
       : state.fingerprint === fingerprint;
-    if (jaRegistrado) return reply({});
+    if (jaRegistrado && !fixTicketId) return reply({});
 
     const env = { ...loadEnvFile(envFile), ...process.env };
     let cookie = await resolveSession(env, state);
@@ -434,9 +574,23 @@ async function main() {
       return reply({ user_message: `Correção anotada no ticket #${ticketAlvo} (sem abrir ticket novo).` });
     }
 
-    const nota = notaHumana();
+    const nota = modoCommit === 'working' ? notaHumana() : null;
     const nome = nota?.nome || tituloDoTicket(map);
     const descricao = nota?.descricao || descricaoDoTicket(map);
+
+    if (fixTicketId) {
+      const atualizado = await requestWithFallback(`/tickets-pai/${fixTicketId}`, {
+        method: 'PUT',
+        body: { nome, descricao, prioridade: PRIORIDADE },
+        cookie,
+      });
+      if (!atualizado.ok || atualizado.json?.success === false) {
+        return reply({
+          user_message: `Não corrigi o ticket #${fixTicketId}: ${atualizado.json?.error || atualizado.json?.message || `HTTP ${atualizado.status}`}`,
+        });
+      }
+      return reply({ user_message: `Ticket #${fixTicketId} corrigido: ${nome}` });
+    }
 
     // Mesmo commit de base e ticket recente: atualiza o ticket em vez de abrir outro.
     const reaproveitar = !sha
@@ -448,18 +602,39 @@ async function main() {
       return reply({ user_message: `[${reaproveitar ? `atualizaria #${state.ticketId}` : 'criaria ticket'}]\n${nome}\n\n${descricao}` });
     }
 
-    if (reaproveitar) {
-      const atualizado = await requestWithFallback(`/tickets-pai/${state.ticketId}`, {
+    const atualizarTicket = async (ticketId) => {
+      const atualizado = await requestWithFallback(`/tickets-pai/${ticketId}`, {
         method: 'PUT',
         body: { nome, descricao, prioridade: PRIORIDADE },
         cookie,
       });
       if (atualizado.ok && atualizado.json?.success !== false) {
         if (nota) fs.rmSync(notaFile, { force: true });
-        writeState({ ...readState(), fingerprint, at: new Date().toISOString(), sessionCookie: cookie, sessionAt: Date.now() });
-        return reply({ user_message: `Ticket #${state.ticketId} atualizado no ScrumHub.` });
+        writeState({
+          ...readState(),
+          fingerprint,
+          ticketId,
+          head,
+          lastProcessedHead: head,
+          at: new Date().toISOString(),
+          sessionCookie: cookie,
+          sessionAt: Date.now(),
+        });
+        return reply({ user_message: `Ticket #${ticketId} atualizado no ScrumHub.` });
       }
-      // Se o ticket foi apagado lá, cai para criar um novo.
+      const motivo = atualizado.json?.error || atualizado.json?.message || `HTTP ${atualizado.status}`;
+      return reply({
+        user_message: `Não atualizei o ticket #${ticketId} (evitamos abrir duplicado): ${motivo}`,
+      });
+    };
+
+    if (reaproveitar) {
+      return atualizarTicket(state.ticketId);
+    }
+
+    const mesmoTituloId = await buscarTicketInternoPendenteMesmoTitulo(cookie, nome);
+    if (mesmoTituloId) {
+      return atualizarTicket(mesmoTituloId);
     }
 
     const prazo = new Date();
@@ -490,6 +665,7 @@ async function main() {
       fingerprint,
       ticketId: id,
       head,
+      lastProcessedHead: head,
       at: new Date().toISOString(),
       criados: [...new Set([...(anterior.criados || []), id])].filter(Boolean).slice(-100),
       sessionCookie: cookie,
@@ -498,6 +674,8 @@ async function main() {
     return reply({ user_message: `Ticket interno criado: ${ORIGIN}/companies/${COMPANY_ID}/projects/${PROJECT_ID} (#${id || 'novo'})` });
   } catch (error) {
     return reply({ user_message: `Falha ao criar ticket interno: ${error instanceof Error ? error.message : String(error)}` });
+  } finally {
+    releaseHookLock(lockFd);
   }
 }
 
