@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  AUTH_CONTROL_HEIGHT,
   AuthPalette,
   authRadius,
   authShadows,
   authSpacing,
   authTypography,
-} from './authTokens'
+} from './authTokens';
 import { mfSpacing } from '../../lib/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -56,7 +57,7 @@ export function AuthInput({
         ]}
       >
         {label}
-        {required ? <Text style={styles.requiredMark}> *</Text> : null}
+        {required ? <Text style={{ color: palette.alertErrorText }}> *</Text> : null}
       </Text>
       <View
         style={[
@@ -149,6 +150,7 @@ export function AuthButton({
       onPress={onPress}
       disabled={loading || disabled}
       accessibilityRole="button"
+      accessibilityState={{ disabled: Boolean(loading || disabled), busy: Boolean(loading) }}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       style={[
@@ -156,10 +158,7 @@ export function AuthButton({
         { backgroundColor: bg },
         (loading || disabled) && styles.buttonDisabled,
         Platform.OS === 'web'
-          ? ({
-              boxShadow: `0 8px 24px ${palette.inputRingFocus}`,
-              cursor: loading || disabled ? 'not-allowed' : 'pointer',
-            } as object)
+          ? ({ cursor: loading || disabled ? 'not-allowed' : 'pointer' } as object)
           : null,
       ]}
     >
@@ -252,14 +251,54 @@ export function AuthAlert({ kind, title, message, palette }: AuthAlertProps) {
   );
 }
 
+type AuthDividerProps = {
+  palette: AuthPalette;
+  label?: string;
+};
+
+/** Separador "ou" entre ações (`.divider` do site). */
+export function AuthDivider({ palette, label = 'ou' }: AuthDividerProps) {
+  return (
+    <View style={styles.divider} accessibilityRole="none">
+      <View style={[styles.dividerLine, { backgroundColor: palette.dividerLine }]} />
+      <Text style={[styles.dividerText, { color: palette.footerText }]}>{label}</Text>
+      <View style={[styles.dividerLine, { backgroundColor: palette.dividerLine }]} />
+    </View>
+  );
+}
+
+type AuthBottomTextProps = {
+  palette: AuthPalette;
+  text?: string;
+  linkLabel?: string;
+  onLinkPress?: () => void;
+};
+
+/** Texto centralizado com link opcional ao fim (`.bottomText` do site). */
+export function AuthBottomText({ palette, text, linkLabel, onLinkPress }: AuthBottomTextProps) {
+  return (
+    <Text style={[styles.bottomText, { color: palette.subtitleText }]}>
+      {text}
+      {text && linkLabel ? ' ' : null}
+      {linkLabel ? (
+        <Text
+          style={[styles.bottomLink, { color: palette.linkText }]}
+          onPress={onLinkPress}
+          accessibilityRole="link"
+          suppressHighlighting
+        >
+          {linkLabel}
+        </Text>
+      ) : null}
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
   label: {
     fontSize: authTypography.labelSize,
     fontWeight: authTypography.labelWeight,
     marginBottom: authSpacing.labelMarginBottom,
-  },
-  requiredMark: {
-    color: '#EF4444',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -267,6 +306,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: authRadius.input,
     paddingHorizontal: authSpacing.inputPaddingH,
+    minHeight: AUTH_CONTROL_HEIGHT,
   },
   input: {
     flex: 1,
@@ -282,16 +322,36 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   button: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: mfSpacing.md,
     borderRadius: authRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: authSpacing.buttonMarginTop,
-    minHeight: 48,
+    minHeight: AUTH_CONTROL_HEIGHT,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.55,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 12,
+  },
+  bottomText: {
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  bottomLink: {
+    fontWeight: '600',
   },
   buttonContentRow: {
     flexDirection: 'row',

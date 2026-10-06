@@ -1,9 +1,8 @@
 /**
- * Tokens de autenticação — alinhados ao design system tech (`techDesign.ts` / system.md).
+ * Tokens das telas de acesso — derivados do tema (paleta do site, `web/components/auth/auth.module.css`).
  */
 
-import { getTechTokens } from '../../lib/techDesign'
-import { mfRadius, mfSpacing } from '../../lib/theme'
+import { getTheme, mfRadius, mfSpacing, mfWebShadow } from '../../lib/theme'
 
 export const AUTH_ILLUSTRATION_URL =
   'https://ik.imagekit.io/qdohqf5kl/Capa%20-%20financas%20pessoais.png?updatedAt=1749862004209'
@@ -12,16 +11,16 @@ export const AUTH_BREAKPOINT_MD = 768
 export const AUTH_BREAKPOINT_LG = 1024
 /** Coluna da página no canvas (não é um card único). */
 export const AUTH_PAGE_MAX_WIDTH = 1120
-/** Painel do formulário — flutuante à direita no desktop (login). */
-export const AUTH_FORM_PANEL_MAX_WIDTH = 440
-/** Formulários longos (cadastro franqueado, onboarding). */
+/** Largura do formulário (igual ao `.formWrap` do site). */
+export const AUTH_FORM_PANEL_MAX_WIDTH = 420
+/** Formulários longos (solicitar acesso). */
 export const AUTH_FORM_WIDE_PANEL_MAX_WIDTH = 720
 /** Largura mínima da viewport para grid em 2 colunas. */
 export const AUTH_FORM_TWO_COL_MIN_WIDTH = 560
 
-export const AUTH_ILLUSTRATION_HEADLINE = 'Seu painel financeiro'
+export const AUTH_ILLUSTRATION_HEADLINE = 'Seu dinheiro organizado, mês a mês.'
 export const AUTH_ILLUSTRATION_SUBHEADLINE =
-  'Saldo, lançamentos, MEI e WhatsApp — tudo num lugar só.'
+  'Controle pessoal e da sua empresa, com acompanhamento da CF Contabilidade.'
 
 export type AuthPalette = {
   bgCanvas: string
@@ -44,6 +43,8 @@ export type AuthPalette = {
   linkText: string
   linkHoverText: string
   footerText: string
+  dividerLine: string
+  brandSoft: string
   alertErrorBg: string
   alertErrorBorder: string
   alertErrorText: string
@@ -56,111 +57,81 @@ export type AuthPalette = {
 }
 
 function buildPalette (isDarkMode: boolean): AuthPalette {
-  const t = getTechTokens(isDarkMode)
-
-  if (isDarkMode) {
-    return {
-      bgCanvas: t.canvasBase,
-      cardBg: t.panelFill,
-      cardBorder: t.panelBorder,
-      cardShadow: t.panelShadow,
-      titleText: '#f1f5f9',
-      subtitleText: '#94a3b8',
-      labelText: '#e2e8f0',
-      iconNeutral: '#64748b',
-      inputBorder: t.insetBorder,
-      inputBg: t.insetFill,
-      inputText: '#f1f5f9',
-      inputPlaceholder: '#64748b',
-      inputBorderFocus: t.accentMuted,
-      inputRingFocus: t.accentGlow,
-      primaryButton: t.accent,
-      primaryButtonHover: '#67e8f9',
-      primaryButtonText: '#030508',
-      linkText: t.accent,
-      linkHoverText: '#67e8f9',
-      footerText: '#94a3b8',
-      alertErrorBg: 'rgba(76, 5, 25, 0.35)',
-      alertErrorBorder: 'rgba(244, 63, 94, 0.35)',
-      alertErrorText: '#fecdd3',
-      alertSuccessBg: 'rgba(6, 78, 59, 0.35)',
-      alertSuccessBorder: 'rgba(16, 185, 129, 0.4)',
-      alertSuccessText: '#a7f3d0',
-      alertSuccessTitle: '#a7f3d0',
-      eyebrowDot: t.accent,
-      eyebrowText: '#94a3b8',
-    }
-  }
-
+  const t = getTheme(isDarkMode)
   return {
-    bgCanvas: t.canvasBase,
-    cardBg: t.panelFill,
-    cardBorder: t.panelBorder,
-    cardShadow: t.panelShadow,
-    titleText: '#0f172a',
-    subtitleText: '#64748b',
-    labelText: '#334155',
-    iconNeutral: '#94a3b8',
-    inputBorder: t.insetBorder,
-    inputBg: t.insetFill,
-    inputText: '#0f172a',
-    inputPlaceholder: '#64748b',
-    inputBorderFocus: t.accentMuted,
-    inputRingFocus: t.accentGlow,
-    primaryButton: t.accent,
-    primaryButtonHover: '#2563eb',
-    primaryButtonText: '#ffffff',
-    linkText: t.accent,
-    linkHoverText: '#1e40af',
-    footerText: '#64748b',
-    alertErrorBg: 'rgba(255, 241, 242, 0.9)',
-    alertErrorBorder: 'rgba(254, 205, 211, 0.85)',
-    alertErrorText: '#881337',
-    alertSuccessBg: '#d1fae5',
-    alertSuccessBorder: '#86efac',
-    alertSuccessText: '#065f46',
-    alertSuccessTitle: '#065f46',
-    eyebrowDot: t.accent,
-    eyebrowText: '#64748b',
+    bgCanvas: t.background,
+    cardBg: t.card,
+    cardBorder: t.border,
+    cardShadow: mfWebShadow(isDarkMode, 'card'),
+    titleText: t.text,
+    subtitleText: t.textSecondary,
+    labelText: t.textSecondary,
+    iconNeutral: t.textSecondary,
+    inputBorder: t.borderStrong,
+    inputBg: t.surface,
+    inputText: t.text,
+    inputPlaceholder: t.textTertiary,
+    inputBorderFocus: t.primary,
+    inputRingFocus: t.primaryRing,
+    primaryButton: t.primary,
+    primaryButtonHover: t.primaryHover,
+    primaryButtonText: t.textOnDark,
+    linkText: t.primary,
+    linkHoverText: t.primaryHover,
+    footerText: t.textTertiary,
+    dividerLine: t.border,
+    brandSoft: t.primarySoft,
+    alertErrorBg: t.errorLight,
+    alertErrorBorder: isDarkMode ? 'rgba(248, 113, 113, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+    alertErrorText: t.error,
+    alertSuccessBg: t.successLight,
+    alertSuccessBorder: isDarkMode ? 'rgba(52, 211, 153, 0.25)' : 'rgba(22, 163, 74, 0.25)',
+    alertSuccessText: t.success,
+    alertSuccessTitle: t.success,
+    eyebrowDot: t.primary,
+    eyebrowText: t.primary,
   }
 }
 
 export const authSpacing = {
   outerPadding: mfSpacing.md,
   cardPaddingHDesktop: mfSpacing.lg,
-  cardPaddingHMobile: mfSpacing.xl,
+  cardPaddingHMobile: mfSpacing.md,
   cardPaddingVDesktop: mfSpacing.lg,
   cardPaddingVMobile: mfSpacing.lg,
   headerMarginBottomDesktop: mfSpacing.lg,
-  headerMarginBottomMobile: mfSpacing.md,
+  headerMarginBottomMobile: mfSpacing.lg,
   fieldGap: mfSpacing.md,
-  labelMarginBottom: mfSpacing.sm,
-  inputPaddingH: mfSpacing.md,
-  inputPaddingV: 12,
-  buttonMarginTop: mfSpacing.xs,
-  footerMarginTop: mfSpacing.md,
+  labelMarginBottom: 6,
+  inputPaddingH: 12,
+  inputPaddingV: 11,
+  buttonMarginTop: 0,
+  footerMarginTop: mfSpacing.lg,
 } as const
 
 export const authRadius = {
-  card: mfRadius.xl,
+  card: mfRadius.lg,
   input: mfRadius.md,
-  button: mfRadius.pill,
-  alert: mfRadius.lg,
+  button: mfRadius.md,
+  alert: mfRadius.md,
 } as const
+
+/** Altura mínima de campo e botão (toque confortável no celular). */
+export const AUTH_CONTROL_HEIGHT = 46
 
 export const authTypography = {
   titleSize: 26,
   titleWeight: '700' as const,
-  titleLineHeight: 32,
+  titleLineHeight: 31,
   subtitleSize: 14,
   subtitleWeight: '400' as const,
-  subtitleLineHeight: 20,
-  labelSize: 14,
+  subtitleLineHeight: 21,
+  labelSize: 13,
   labelWeight: '600' as const,
   inputSize: 15,
   inputWeight: '400' as const,
   buttonSize: 15,
-  buttonWeight: '700' as const,
+  buttonWeight: '600' as const,
   footerSize: 12,
   footerWeight: '400' as const,
   heroTitleSize: 28,

@@ -1,36 +1,27 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { mfSpacing } from '../../lib/theme'
+import { Text, StyleSheet } from 'react-native'
 
 type AuthEyebrowProps = {
   label: string
-  dotColor: string
   textColor: string
+  /** Mantido por compatibilidade; o rótulo do site não tem ponto. */
+  dotColor?: string
 }
 
-export function AuthEyebrow ({ label, dotColor, textColor }: AuthEyebrowProps) {
+/** Rótulo curto acima do título (`.eyebrow` do site): maiúsculas, cor da marca. */
+export function AuthEyebrow ({ label, textColor }: AuthEyebrowProps) {
   return (
-    <View style={styles.row}>
-      <View style={[styles.dot, { backgroundColor: dotColor }]} />
-      <Text style={[styles.text, { color: textColor }]}>{label}</Text>
-    </View>
+    <Text style={[styles.text, { color: textColor }]} accessibilityRole="text">
+      {label.toUpperCase()}
+    </Text>
   )
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: mfSpacing.sm,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
   text: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: 0.96,
+    marginBottom: 8,
   },
 })

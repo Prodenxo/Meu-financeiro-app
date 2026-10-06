@@ -17,7 +17,7 @@ e não abria no celular. Decisão do dono: atualizar o projeto (2026-10-06).
 - [x] Gates sem regressão contra a linha de base: typecheck 85 → 80 erros (nenhum arquivo novo),
       lint 5 erros (iguais aos de antes), Jest com as mesmas 8 suítes antigas falhando.
 - [x] Bundle iOS e Android gerado com `npx expo export`.
-- [ ] Teste manual no Expo Go (iPhone e Android).
+- [x] Teste manual no Expo Go (iPhone e Android) — confirmado pelo dono em 2026-10-06.
 
 ## Decisões
 

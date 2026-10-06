@@ -656,7 +656,7 @@ export function AccessRequestForm({ onGoToLogin, onDone }: AccessRequestFormProp
   }
 
   return (
-    <AuthLayoutMobile title={title} subtitle={subtitle}>
+    <AuthLayoutMobile title={title} subtitle={subtitle} eyebrowLabel="Cadastro" wide>
       {content}
     </AuthLayoutMobile>
   );

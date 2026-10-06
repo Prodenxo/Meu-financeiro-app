@@ -357,10 +357,11 @@ export function RegisterAuthForm({ onGoToLogin }: RegisterAuthFormProps) {
     </>
   );
 
-  const title = hasInviteQuery ? 'Criar conta com convite' : 'Acesso Restrito';
+  const title = hasInviteQuery ? 'Criar conta com convite' : 'Acesso restrito';
   const subtitle = hasInviteQuery
-    ? 'Use o link enviado pelo administrador da empresa'
-    : 'Esta plataforma é exclusiva para convidados';
+    ? 'Use o link enviado pelo administrador da empresa.'
+    : 'O cadastro direto é feito por convite da sua empresa.';
+  const eyebrowLabel = hasInviteQuery ? 'Convite' : 'Cadastro';
 
   if (Platform.OS === 'web') {
     return (
@@ -371,7 +372,7 @@ export function RegisterAuthForm({ onGoToLogin }: RegisterAuthFormProps) {
   }
 
   return (
-    <AuthLayoutMobile title={title} subtitle={subtitle}>
+    <AuthLayoutMobile title={title} subtitle={subtitle} eyebrowLabel={eyebrowLabel}>
       <View style={{ gap: 16 }}>{content}</View>
     </AuthLayoutMobile>
   );

@@ -369,7 +369,7 @@ export default function ResetPasswordScreen ({
           ? 'Escolha uma senha forte para concluir a recuperação.'
           : subtitle
       }
-      eyebrowLabel="RECUPERAÇÃO"
+      eyebrowLabel="Recuperação"
     >
       {formBody}
     </AuthLayoutMobile>

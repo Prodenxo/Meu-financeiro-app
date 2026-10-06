@@ -2,8 +2,7 @@ import React, { useState } from 'react'
 import { Pressable, StyleSheet, Platform, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useThemeStore, type ThemePreference } from '../../store/themeStore'
-import { getTechTokens } from '../../lib/techDesign'
-import { getAuthPalette } from './authTokens'
+import { getAuthPalette, type AuthPalette } from './authTokens'
 
 type AuthThemeToggleProps = {
   variant?: 'absolute' | 'inline'
@@ -27,7 +26,6 @@ export function AuthThemeToggle ({ variant = 'inline' }: AuthThemeToggleProps) {
   const preference = useThemeStore((s) => s.preference)
   const isDarkMode = useThemeStore((s) => s.isDarkMode)
   const setPreference = useThemeStore((s) => s.setPreference)
-  const tokens = getTechTokens(isDarkMode)
   const palette = getAuthPalette(isDarkMode)
 
   return (
@@ -39,13 +37,7 @@ export function AuthThemeToggle ({ variant = 'inline' }: AuthThemeToggleProps) {
           backgroundColor: palette.cardBg,
           borderColor: palette.cardBorder,
         },
-        Platform.OS === 'web'
-          ? ({
-              boxShadow: palette.cardShadow,
-              backdropFilter: 'blur(16px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(16px) saturate(1.2)',
-            } as object)
-          : null,
+        Platform.OS === 'web' ? ({ boxShadow: palette.cardShadow } as object) : null,
       ]}
     >
       {SEGMENTS.map((seg) => {
@@ -55,8 +47,7 @@ export function AuthThemeToggle ({ variant = 'inline' }: AuthThemeToggleProps) {
             key={seg.value}
             seg={seg}
             selected={selected}
-            accent={tokens.accent}
-            isDarkMode={isDarkMode}
+            palette={palette}
             onPress={() => {
               void setPreference(seg.value)
             }}
@@ -70,19 +61,18 @@ export function AuthThemeToggle ({ variant = 'inline' }: AuthThemeToggleProps) {
 function Segment ({
   seg,
   selected,
-  accent,
-  isDarkMode,
+  palette,
   onPress,
 }: {
   seg: SegmentDef
   selected: boolean
-  accent: string
-  isDarkMode: boolean
+  palette: AuthPalette
   onPress: () => void
 }) {
   const [hovered, setHovered] = useState(false)
-  const idleIcon = isDarkMode ? '#64748b' : '#94a3b8'
-  const selectedBg = isDarkMode ? 'rgba(34, 211, 238, 0.18)' : 'rgba(29, 78, 216, 0.12)'
+  const accent = palette.linkText
+  const idleIcon = palette.footerText
+  const selectedBg = palette.brandSoft
 
   return (
     <Pressable
@@ -107,8 +97,8 @@ function Segment ({
   )
 }
 
-const SEGMENT_SIZE = 36
-const TRACK_PADDING = 4
+const SEGMENT_SIZE = 32
+const TRACK_PADDING = 3
 
 const styles = StyleSheet.create({
   track: {

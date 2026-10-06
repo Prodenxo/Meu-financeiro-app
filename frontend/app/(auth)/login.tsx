@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { AuthLayoutWeb } from '@/components/auth/AuthLayoutWeb';
 import { AuthLayoutMobile } from '@/components/auth/AuthLayoutMobile';
 import {
   AuthAlert,
+  AuthBottomText,
   AuthButton,
+  AuthDivider,
   AuthInput,
   AuthLink,
 } from '@/components/auth/AuthFormControls';
@@ -14,6 +16,9 @@ import { getAuthPalette } from '@/components/auth/authTokens';
 import { useThemeStore } from '@/store/themeStore';
 import { useInviteTokenFromDeepLink } from '@/lib/registerInviteDeepLink';
 import { AuthLegalFooter } from '@/components/AuthLegalFooter';
+
+const TITLE = 'Bem-vindo de volta';
+const SUBTITLE = 'Faça login para acessar sua conta.';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -37,13 +42,13 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Por favor, preencha todos os campos');
+      setError('Por favor, preencha todos os campos.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {
@@ -51,81 +56,8 @@ export default function LoginScreen() {
     }
   };
 
-  if (Platform.OS === 'web') {
-    return (
-      <AuthLayoutWeb
-        title="Bem-vindo de volta"
-        subtitle="Faça login para acessar sua conta"
-        showIllustration
-      >
-        <AuthInput
-          label="E-mail"
-          palette={palette}
-          placeholder="seu@email.com"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          leftIcon="mail-outline"
-        />
-        <View>
-          <AuthInput
-            label="Senha"
-            palette={palette}
-            placeholder="••••••••"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            onSubmitEditing={handleLogin}
-            returnKeyType="go"
-            rightIconToggle={{
-              iconWhenSecure: 'eye-off-outline',
-              iconWhenVisible: 'eye-outline',
-              isVisible: showPassword,
-              onToggle: () => setShowPassword(!showPassword),
-              accessibilityLabelShow: 'Mostrar senha',
-              accessibilityLabelHide: 'Ocultar senha',
-            }}
-          />
-          <View style={{ marginTop: 8, alignItems: 'flex-end' }}>
-            <AuthLink
-              label="Esqueci minha senha"
-              palette={palette}
-              align="right"
-              onPress={() => router.push('/forgot')}
-            />
-          </View>
-        </View>
-        {error ? <AuthAlert kind="error" message={error} palette={palette} /> : null}
-        <AuthButton
-          label="Entrar"
-          loadingLabel="Entrando..."
-          loading={loading}
-          onPress={handleLogin}
-          palette={palette}
-        />
-        <AuthLegalFooter />
-        {hasInvite ? (
-          <View style={webStyles.bottomRow}>
-            <Text style={{ color: palette.subtitleText, fontSize: 14 }}>Tem um convite? </Text>
-            <AuthLink
-              label="Cadastre-se"
-              palette={palette}
-              onPress={() => router.push('/register')}
-            />
-          </View>
-        ) : null}
-      </AuthLayoutWeb>
-    );
-  }
-
-  return (
-    <AuthLayoutMobile
-      title="Bem-vindo de volta"
-      subtitle="Faça login para acessar sua conta"
-    >
+  const form = (
+    <>
       <AuthInput
         label="E-mail"
         palette={palette}
@@ -135,7 +67,8 @@ export default function LoginScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
-        leftIcon="mail-outline"
+        textContentType="emailAddress"
+        returnKeyType="next"
       />
       <View>
         <AuthInput
@@ -146,6 +79,8 @@ export default function LoginScreen() {
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
+          autoComplete="current-password"
+          textContentType="password"
           onSubmitEditing={handleLogin}
           returnKeyType="go"
           rightIconToggle={{
@@ -169,33 +104,37 @@ export default function LoginScreen() {
       {error ? <AuthAlert kind="error" message={error} palette={palette} /> : null}
       <AuthButton
         label="Entrar"
-        loadingLabel="Entrando..."
+        loadingLabel="Entrando…"
         loading={loading}
         onPress={handleLogin}
         palette={palette}
       />
-      <AuthLegalFooter />
-      {hasInvite ? (
-        <View style={webStyles.bottomRow}>
-          <Text style={{ color: palette.subtitleText, fontSize: 14 }}>Tem um convite? </Text>
-          <AuthLink
-            label="Cadastre-se"
-            palette={palette}
-            onPress={() => router.push('/register')}
-          />
-        </View>
-      ) : null}
+      <AuthDivider palette={palette} />
+      <AuthBottomText
+        palette={palette}
+        text="Ainda não tem conta?"
+        linkLabel="Cadastre-se"
+        onLinkPress={() => router.push('/solicitar-acesso')}
+      />
+      <AuthBottomText
+        palette={palette}
+        text="Recebeu um convite da sua empresa? Abra o link do convite para criar a conta."
+      />
+    </>
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <AuthLayoutWeb title={TITLE} subtitle={SUBTITLE} showIllustration>
+        {form}
+        <AuthLegalFooter />
+      </AuthLayoutWeb>
+    );
+  }
+
+  return (
+    <AuthLayoutMobile title={TITLE} subtitle={SUBTITLE} footer={<AuthLegalFooter />}>
+      {form}
     </AuthLayoutMobile>
   );
 }
-
-const webStyles = StyleSheet.create({
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginTop: 4,
-  },
-});
-

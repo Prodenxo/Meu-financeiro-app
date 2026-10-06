@@ -13,6 +13,9 @@ import {
 import { getAuthPalette } from '@/components/auth/authTokens';
 import { useThemeStore } from '@/store/themeStore';
 
+const TITLE = 'Recuperar senha';
+const SUBTITLE = 'Digite seu e-mail para receber o link de recuperação.';
+
 export default function ForgotScreen() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -26,14 +29,14 @@ export default function ForgotScreen() {
 
   const handleResetPassword = async () => {
     if (!email) {
-      setError('Por favor, informe seu e-mail');
+      setError('Por favor, informe seu e-mail.');
       return;
     }
     setLoading(true);
     setError('');
     setSuccessMessage('');
     try {
-      await resetPassword(email);
+      await resetPassword(email.trim());
       setSuccessMessage(
         'Se este e-mail estiver cadastrado, enviamos um link de recuperação. ' +
           'Verifique a caixa de entrada e o spam. E-mails @hotmail/@outlook podem demorar ou ir para lixo eletrônico. ' +
@@ -41,57 +44,19 @@ export default function ForgotScreen() {
       );
       setEmail('');
     } catch (err: any) {
-      setError(err.message || 'Erro ao enviar link de recuperação');
+      setError(err.message || 'Erro ao enviar link de recuperação.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (Platform.OS === 'web') {
-    return (
-      <AuthLayoutWeb
-        title="Recuperar Senha"
-        subtitle="Digite seu e-mail para receber o link de recuperação"
-        showIllustration
-      >
-        <AuthInput
-          label="E-mail"
-          palette={palette}
-          placeholder="seu@email.com"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          leftIcon="mail-outline"
-          onSubmitEditing={handleResetPassword}
-          returnKeyType="go"
-        />
-        {error ? <AuthAlert kind="error" message={error} palette={palette} /> : null}
-        {successMessage ? <AuthAlert kind="success" message={successMessage} palette={palette} /> : null}
-        <AuthButton
-          label="Enviar Link de Recuperação"
-          loadingLabel="Enviando..."
-          loading={loading}
-          onPress={handleResetPassword}
-          palette={palette}
-        />
-        <AuthLink
-          label="Voltar ao login"
-          align="center"
-          palette={palette}
-          onPress={() => router.back()}
-        />
-      </AuthLayoutWeb>
-    );
-  }
+  const goToLogin = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/login');
+  };
 
-  return (
-    <AuthLayoutMobile
-      title="Recuperar Senha"
-      subtitle="Digite seu e-mail para receber o link de recuperação"
-      eyebrowLabel="RECUPERAÇÃO"
-    >
+  const form = (
+    <>
       <AuthInput
         label="E-mail"
         palette={palette}
@@ -101,25 +66,34 @@ export default function ForgotScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
-        leftIcon="mail-outline"
+        textContentType="emailAddress"
         onSubmitEditing={handleResetPassword}
         returnKeyType="go"
       />
       {error ? <AuthAlert kind="error" message={error} palette={palette} /> : null}
       {successMessage ? <AuthAlert kind="success" message={successMessage} palette={palette} /> : null}
       <AuthButton
-        label="Enviar Link de Recuperação"
-        loadingLabel="Enviando..."
+        label="Enviar link de recuperação"
+        loadingLabel="Enviando…"
         loading={loading}
         onPress={handleResetPassword}
         palette={palette}
       />
-      <AuthLink
-        label="Voltar ao login"
-        align="center"
-        palette={palette}
-        onPress={() => router.back()}
-      />
+      <AuthLink label="Voltar ao login" align="center" palette={palette} onPress={goToLogin} />
+    </>
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <AuthLayoutWeb title={TITLE} subtitle={SUBTITLE} showIllustration>
+        {form}
+      </AuthLayoutWeb>
+    );
+  }
+
+  return (
+    <AuthLayoutMobile title={TITLE} subtitle={SUBTITLE} eyebrowLabel="Recuperação">
+      {form}
     </AuthLayoutMobile>
   );
 }
