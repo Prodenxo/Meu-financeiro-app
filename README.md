@@ -1,37 +1,29 @@
-# Meu Financeiro — App + API
+# Meu Financeiro - App (Expo)
 
-Repositório do **celular (Expo)** e da **API Express**, com **Supabase** (migrations e Edge Functions).
+Repositório do **app de celular** (Expo / React Native).
 
-O site em **Next.js** ficou no repositório separado (`Meu-financeiro-clone`, pasta `web/`). Este repo **não** contém `web/`.
+A **API Express**, o **Supabase** (migrations e Edge Functions) e o **site Next.js** ficam no repositório `Meu-financeiro-clone` (pastas `backend/`, `supabase/` e `web/`). Este repo não tem backend próprio.
 
 ## Começar
 
 ```powershell
 npm install
-npm run dev          # API (:3333) + Expo (celular / web legado :8081)
+npm run dev          # sobe a API do Meu-financeiro-clone (:3333) + Expo em modo LAN
 ```
 
-Env:
-
-- `backend/.env` ← `backend/.env.example`
-- `frontend/.env` ← `frontend/.env.example`
+- Celular: Expo Go no mesmo Wi-Fi, escaneie o QR Code.
+- `frontend/.env` (copie de `frontend/.env.example`): no celular, `EXPO_PUBLIC_MEI_API_URL_DEV=http://<IP-do-PC>:3333`.
+- API em outra pasta: defina `MF_BACKEND_DIR` antes do `npm run dev`.
 
 ## Estrutura
 
 ```
-backend/     API Express (:3333)
 frontend/    Expo (iOS, Android, web :8081)
-supabase/    migrations e Edge Functions
-scripts/     migrate, smoke, dev.ps1
+scripts/     dev.ps1
 docs/        documentação do produto
 ```
 
 ## Deploy
 
-- **API:** `Dockerfile` na raiz (Easypanel / Docker)
 - **App:** EAS / lojas — `frontend/docs/DEPLOY.md`
-
-## Site Next.js
-
-Front web migrado: outro repo, `npm run dev` em `web/` → `:3000`.  
-A API e o Supabase deste repo continuam sendo usados pelo site via `MEI_API_URL` e variáveis Supabase.
+- **API e site:** repositório `Meu-financeiro-clone`
