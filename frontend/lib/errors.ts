@@ -38,29 +38,6 @@ export function isBenignSignOutError(message: string): boolean {
   return isInvalidRefreshTokenMessage(message) || isAuthSessionMissingMessage(message);
 }
 
-/** Mensagem amigável quando a migration de conta global ainda não foi aplicada no Supabase. */
-export function formatContaMoedaGlobalDbError(error: unknown): string {
-  const msg = getErrorMessage(error)
-  const code =
-    error && typeof error === 'object' && 'code' in error
-      ? String((error as { code?: string }).code)
-      : ''
-  if (
-    code === '42P01' ||
-    code === 'PGRST205' ||
-    /contas_moeda_global/i.test(msg) ||
-    /schema cache/i.test(msg) ||
-    /relation.*does not exist/i.test(msg)
-  ) {
-    return (
-      'A tabela contas_moeda_global ainda não existe no Supabase. ' +
-      'Execute a migration Site/supabase/migrations/20260706120000_create_contas_moeda_global.sql ' +
-      'no SQL Editor do projeto.'
-    )
-  }
-  return msg
-}
-
 /** Mensagem amigável quando a migration de contas ainda não foi aplicada no Supabase. */
 export function formatContaFinanceiraDbError(error: unknown): string {
   const msg = getErrorMessage(error);

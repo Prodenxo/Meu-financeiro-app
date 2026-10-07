@@ -8,6 +8,7 @@ import { normalizeLancamentoRow } from '@/lib/finance/normalize';
 import { normalizeContaRow } from '@/lib/finance/contas';
 import { normalizeRecorrenciaRow } from '@/lib/finance/recorrencias';
 import { budgetDateParam } from '@/lib/finance/orcamentosScreen';
+import { buildCurrencyCatalog, normalizeContaMoedaGlobalRow } from '@/lib/finance/moedas';
 
 const REQUEST_TIMEOUT_MS = 20000;
 
@@ -351,6 +352,105 @@ export async function deleteCategoria(id) {
     movedTo: data?.moved_to ? String(data.moved_to) : null,
     moved: Number(data?.moved_transactions) || 0,
   };
+}
+
+/* ===== Conta global (contas_moeda_global) =====
+ * O backend não tem rotas de leitura/gravação dessa tabela: como o site, lê e grava com o token do usuário
+ * (RLS isola por usuário). Cotações e catálogo vêm do backend (`/moedas-globais`).
+ */
+
+const CONTA_GLOBAL_TABLE = 'contas_moeda_global';
+
+function contaGlobalError(error, fallback) {
+  const msg = String(error?.message || '');
+  const code = String(error?.code || '');
+  if (code === '42P01' || code === 'PGRST205' || /schema cache|does not exist/i.test(msg)) {
+    return new FinanceApiError('A Conta global ainda não está disponível no servidor.', { kind: 'http' });
+  }
+  if (/network request failed|failed to fetch|network/i.test(msg)) {
+    return new FinanceApiError('Sem conexão com o servidor. Verifique sua internet e tente de novo.', { kind: 'network' });
+  }
+  if (code === '23514') {
+    return new FinanceApiError('O saldo não pode ser negativo.', { kind: 'http', errors: { valor: 'O saldo não pode ser negativo.' } });
+  }
+  return new FinanceApiError(fallback, { kind: 'http' });
+}
+
+/** Saldos ativos do usuário, como o site (`fetchContasMoedaGlobal`). */
+export async function fetchContasMoedaGlobal() {
+  const userId = await currentUserIdOrThrow();
+  const { data, error } = await supabase
+    .from(CONTA_GLOBAL_TABLE)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('ativo', true)
+    .order('moeda', { ascending: true });
+  if (error) throw contaGlobalError(error, 'Não foi possível carregar a Conta global.');
+  return (data || []).map(normalizeContaMoedaGlobalRow);
+}
+
+/** `payload` = { moeda, nome, valor } já validado por `validateMoedaForm`. */
+export async function saveContaMoedaGlobal(id, payload) {
+  const userId = await currentUserIdOrThrow();
+  const row = {
+    moeda: payload.moeda,
+    nome: payload.nome,
+    valor: payload.valor,
+    ativo: true,
+    atualizado_em: new Date().toISOString(),
+  };
+  const query = id
+    ? supabase.from(CONTA_GLOBAL_TABLE).update(row).eq('id', id).eq('user_id', userId)
+    : supabase.from(CONTA_GLOBAL_TABLE).insert({ ...row, user_id: userId });
+  const { data, error } = await query.select('*');
+  if (error) throw contaGlobalError(error, 'Não foi possível salvar a moeda.');
+  if (!data?.length) {
+    throw new FinanceApiError('Este saldo não existe mais. Atualize a lista.', { kind: 'http', status: 404 });
+  }
+  return normalizeContaMoedaGlobalRow(data[0]);
+}
+
+/** Exclui como o site (`deleteMoedaGlobalAction`): só a linha do próprio usuário. */
+export async function deleteContaMoedaGlobal(id) {
+  const userId = await currentUserIdOrThrow();
+  const { error } = await supabase.from(CONTA_GLOBAL_TABLE).delete().eq('id', id).eq('user_id', userId);
+  if (error) throw contaGlobalError(error, 'Não foi possível excluir a moeda.');
+}
+
+/**
+ * Cotações (1 unidade = X reais) pelo backend. `sources` (fonte + data informada pelo provedor) só vem do
+ * servidor com esta versão; sem ela a tela não mostra data.
+ */
+export async function fetchCotacoesBrl(codes, opts) {
+  const list = [...new Set((codes || []).map((c) => String(c).trim().toUpperCase()).filter((c) => c && c !== 'BRL'))];
+  if (list.length === 0) return { rates: {}, sources: [] };
+  const data = await financeGet(`/moedas-globais/cotacoes?codes=${encodeURIComponent(list.join(','))}`, opts);
+  const rates = {};
+  for (const [code, value] of Object.entries(data?.rates || {})) {
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) rates[String(code).toUpperCase()] = n;
+  }
+  const sources = Array.isArray(data?.sources)
+    ? data.sources.map((s) => ({
+        name: s?.name ? String(s.name) : null,
+        date: /^\d{4}-\d{2}-\d{2}$/.test(String(s?.date || '')) ? String(s.date) : null,
+        codes: Array.isArray(s?.codes) ? s.codes.map((c) => String(c).toUpperCase()) : [],
+      }))
+    : [];
+  return { rates, sources };
+}
+
+/**
+ * Catálogo `{ CODE: nome }`: códigos do backend + nomes conhecidos; se o servidor falhar usa a lista do site
+ * (`fromServer: false`).
+ */
+export async function fetchMoedasCatalog(opts) {
+  try {
+    const data = await financeGet('/moedas-globais/currencies', opts);
+    return { catalog: buildCurrencyCatalog(Object.keys(data?.currencies || {})), fromServer: true };
+  } catch {
+    return { catalog: buildCurrencyCatalog([]), fromServer: false };
+  }
 }
 
 /** `month` em 1–12. */
