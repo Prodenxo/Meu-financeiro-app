@@ -1,6 +1,9 @@
 import {
   FinanceApiError,
+  createConta,
   createTransaction,
+  deleteConta,
+  updateConta,
   deleteTransaction,
   updateTransaction,
   fetchContas,
@@ -156,6 +159,81 @@ describe('fetchContas', () => {
     global.fetch.mockResolvedValueOnce(jsonResponse(500, { success: false }));
     await expect(fetchContas()).rejects.toMatchObject({ status: 500 });
     expect(mockFrom).not.toHaveBeenCalled();
+  });
+});
+
+const htmlNotFound = () => ({
+  status: 404,
+  ok: false,
+  headers: { get: () => 'text/html' },
+  json: async () => {
+    throw new Error('html');
+  },
+});
+
+const contaPayload = {
+  bank_mode: 'catalog',
+  instituicao_id: 'nubank',
+  nome: 'Nubank',
+  tipo: 'corrente',
+  saldo_inicial: 10,
+  limite_credito: null,
+  dia_fechamento: null,
+  dia_vencimento: null,
+  cor: '#820AD1',
+};
+
+describe('contas: gravações', () => {
+  it('POST /contas-financeiras envia o corpo e normaliza a resposta', async () => {
+    global.fetch.mockResolvedValueOnce(
+      jsonResponse(201, { success: true, data: { id: 'c9', nome: 'Nubank', saldo_inicial: '10', ativo: true } }),
+    );
+    const conta = await createConta(contaPayload);
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url).toBe('http://api.test/api/contas-financeiras');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual(contaPayload);
+    expect(conta).toMatchObject({ id: 'c9', saldo_inicial: 10, ativo: true });
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('erro de validação traz as mensagens por campo', async () => {
+    global.fetch.mockResolvedValueOnce(
+      jsonResponse(400, { success: false, message: 'Revise os campos da conta.', errors: { nome: 'Informe um nome para a conta.' } }),
+    );
+    await expect(updateConta('c1', contaPayload)).rejects.toMatchObject({
+      status: 400,
+      errors: { nome: 'Informe um nome para a conta.' },
+      routeMissing: false,
+    });
+  });
+
+  it('conta inexistente (404 com JSON) não cai no plano B', async () => {
+    global.fetch.mockResolvedValueOnce(jsonResponse(404, { success: false, message: 'Conta não encontrada.' }));
+    await expect(deleteConta('x')).rejects.toMatchObject({ status: 404, message: 'Conta não encontrada.' });
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('servidor sem a rota grava com o token do usuário, sem campos internos', async () => {
+    global.fetch.mockResolvedValueOnce(htmlNotFound());
+    mockGetSession.mockResolvedValueOnce({ data: { session: { user: { id: 'u1' } } } });
+    const single = jest.fn(async () => ({ data: { id: 'n1', nome: 'Nubank', saldo_inicial: 10 }, error: null }));
+    const insert = jest.fn(() => ({ select: () => ({ single }) }));
+    mockFrom.mockReturnValueOnce({ insert });
+
+    const conta = await createConta(contaPayload);
+    const row = insert.mock.calls[0][0];
+    expect(row).toMatchObject({ nome: 'Nubank', instituicao_id: 'nubank', user_id: 'u1' });
+    expect(row).not.toHaveProperty('bank_mode');
+    expect(conta.id).toBe('n1');
+  });
+
+  it('DELETE usa o id na URL', async () => {
+    global.fetch.mockResolvedValueOnce(jsonResponse(200, { success: true, data: { id: 'a b' } }));
+    await deleteConta('a b');
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url).toBe('http://api.test/api/contas-financeiras/a%20b');
+    expect(init.method).toBe('DELETE');
   });
 });
 

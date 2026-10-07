@@ -13,13 +13,17 @@ const REQUEST_TIMEOUT_MS = 20000;
 export class FinanceApiError extends Error {
   /**
    * @param {string} message
-   * @param {{ kind: 'network' | 'auth' | 'http' | 'config', status?: number }} info
+   * @param {{ kind: 'network' | 'auth' | 'http' | 'config', status?: number, errors?: Record<string, string> | null, routeMissing?: boolean }} info
    */
-  constructor(message, { kind, status } = { kind: 'http' }) {
+  constructor(message, { kind, status, errors = null, routeMissing = false } = { kind: 'http' }) {
     super(message);
     this.name = 'FinanceApiError';
     this.kind = kind;
     this.status = status;
+    /** Mensagens por campo devolvidas pelo servidor (validação). */
+    this.errors = errors;
+    /** 404 sem JSON: o servidor publicado ainda não tem a rota. */
+    this.routeMissing = routeMissing;
   }
 }
 
@@ -94,7 +98,13 @@ export async function financeRequest(method, path, body, { signal } = {}) {
   }
   if (!response.ok || payload?.success === false) {
     const message = String(payload?.message || '').trim() || `Erro do servidor (${response.status}).`;
-    throw new FinanceApiError(message, { kind: 'http', status: response.status });
+    const errors = payload?.errors && typeof payload.errors === 'object' ? payload.errors : null;
+    throw new FinanceApiError(message, {
+      kind: 'http',
+      status: response.status,
+      errors,
+      routeMissing: response.status === 404 && !payload,
+    });
   }
   return payload ? payload.data : null;
 }
@@ -189,6 +199,83 @@ export async function fetchContas(opts) {
     throw new FinanceApiError('Não foi possível carregar suas contas.', { kind: 'http' });
   }
   return (data || []).map(normalizeContaRow);
+}
+
+const isRouteMissing = (error) => error instanceof FinanceApiError && error.routeMissing;
+
+const contaWriteError = () =>
+  new FinanceApiError('Não foi possível salvar a conta. Tente de novo.', { kind: 'http' });
+
+/**
+ * `payload` já validado por `validateContaForm` (mesmas regras do servidor e do site).
+ * Servidor sem a rota (404 sem JSON): grava com o token do usuário, como o site (RLS).
+ */
+export async function createConta(payload) {
+  try {
+    return normalizeContaRow(await financeRequest('POST', '/contas-financeiras', payload));
+  } catch (error) {
+    if (!isRouteMissing(error)) throw error;
+  }
+  const userId = await currentUserIdOrThrow();
+  const { bank_mode: _mode, ...row } = payload;
+  const { data, error } = await supabase
+    .from('contas_financeiras')
+    .insert({ ...row, user_id: userId, atualizado_em: new Date().toISOString() })
+    .select('*')
+    .single();
+  if (error) throw contaWriteError();
+  return normalizeContaRow(data);
+}
+
+export async function updateConta(id, payload) {
+  const contaId = encodeURIComponent(String(id));
+  try {
+    return normalizeContaRow(await financeRequest('PUT', `/contas-financeiras/${contaId}`, payload));
+  } catch (error) {
+    if (!isRouteMissing(error)) throw error;
+  }
+  const userId = await currentUserIdOrThrow();
+  const { bank_mode: _mode, ...row } = payload;
+  const { data, error } = await supabase
+    .from('contas_financeiras')
+    .update({ ...row, atualizado_em: new Date().toISOString() })
+    .eq('id', String(id))
+    .eq('user_id', userId)
+    .select('*')
+    .maybeSingle();
+  if (error) throw contaWriteError();
+  if (!data) throw new FinanceApiError('Conta não encontrada.', { kind: 'http', status: 404 });
+  return normalizeContaRow(data);
+}
+
+/** Remove a conta; os lançamentos vinculados ficam sem conta (`ON DELETE SET NULL`). */
+export async function deleteConta(id) {
+  const contaId = encodeURIComponent(String(id));
+  try {
+    await financeRequest('DELETE', `/contas-financeiras/${contaId}`);
+    return;
+  } catch (error) {
+    if (!isRouteMissing(error)) throw error;
+  }
+  const userId = await currentUserIdOrThrow();
+  const { error } = await supabase
+    .from('contas_financeiras')
+    .delete()
+    .eq('id', String(id))
+    .eq('user_id', userId);
+  if (error) {
+    throw new FinanceApiError('Não foi possível excluir a conta. Tente de novo.', { kind: 'http' });
+  }
+}
+
+/** Reimporta o extrato da conta sincronizada (mesma chamada do site). */
+export async function syncContaExtrato(id) {
+  return financeRequest('POST', '/open-finance/pluggy/sync', { contaId: String(id), mode: 'full' });
+}
+
+/** Desliga a sincronização automática da conta; lançamentos já importados ficam. */
+export async function disconnectContaSync(id) {
+  return financeRequest('POST', '/open-finance/pluggy/disconnect', { contaId: String(id) });
 }
 
 export function toCategoryMaps(rows) {
