@@ -5,7 +5,15 @@ import { initialsOf } from '../Dashboard/overview/OverviewHeader';
 import { TOUCH_MIN } from '../Dashboard/overview/overviewTokens';
 
 /** ☰ · título e subtítulo · avatar. O menu só aparece onde não há navegação no topo (web largo). */
-export function CategoriasHeader({ tokens, displayName, showMenu, onOpenMenu, onOpenProfile }) {
+export function CategoriasHeader({
+  tokens,
+  displayName,
+  showMenu,
+  onOpenMenu,
+  onOpenProfile,
+  title = 'Categorias',
+  subtitle = 'Entenda para onde vai seu dinheiro',
+}) {
   return (
     <View style={styles.row}>
       {showMenu ? (
@@ -25,10 +33,10 @@ export function CategoriasHeader({ tokens, displayName, showMenu, onOpenMenu, on
       ) : null}
       <View style={styles.texts}>
         <Text style={[styles.title, { color: tokens.text }]} numberOfLines={1} accessibilityRole="header">
-          Categorias
+          {title}
         </Text>
         <Text style={[styles.subtitle, { color: tokens.textSecondary }]} numberOfLines={2}>
-          Entenda para onde vai seu dinheiro
+          {subtitle}
         </Text>
       </View>
       <Pressable

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { normalizeLancamentoRow } from '@/lib/finance/normalize';
 import { normalizeContaRow } from '@/lib/finance/contas';
 import { normalizeRecorrenciaRow } from '@/lib/finance/recorrencias';
+import { budgetDateParam } from '@/lib/finance/orcamentosScreen';
 
 const REQUEST_TIMEOUT_MS = 20000;
 
@@ -356,6 +357,29 @@ export async function deleteCategoria(id) {
 export async function fetchBudgetSummary({ year, month }, opts) {
   const rows = await financeGet(`/categories/budgets/summary?year=${year}&month=${month}`, opts);
   return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * Cria ou altera o limite da categoria no mês. `onlyIfEmpty` (novo orçamento): o servidor recusa com 409
+ * se a categoria já tiver limite no mês. `valor` nulo remove o limite (os lançamentos não mudam).
+ */
+export async function saveBudget({ categoriaId, valor, month, onlyIfEmpty = false }) {
+  return financeRequest('POST', '/categories/budgets', {
+    categorias_id: Number(categoriaId),
+    valor_orcado: valor,
+    date: budgetDateParam(month),
+    ...(onlyIfEmpty ? { only_if_empty: true } : null),
+  });
+}
+
+export async function removeBudget({ categoriaId, month }) {
+  return saveBudget({ categoriaId, valor: null, month });
+}
+
+/** Copia os limites do mês anterior para `month` (o servidor substitui os que já existem no destino). */
+export async function duplicateBudgets(month) {
+  const data = await financeRequest('POST', '/categories/budgets/duplicate', { year: month.year, month: month.month });
+  return { duplicated: Number(data?.duplicated) || 0 };
 }
 
 export async function fetchDreMatrix(year, opts) {
