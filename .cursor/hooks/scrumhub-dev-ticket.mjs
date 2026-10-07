@@ -126,13 +126,18 @@ function processoVivo(pid) {
   }
 }
 
+/** fs.rmSync({ force: true }) não apaga nem acusa erro em caminhos com acento (ex.: C:\Users\Usuário) no Node 24/Windows. */
+function apagarArquivo(file) {
+  try {
+    fs.unlinkSync(file);
+  } catch { /* ignore */ }
+}
+
 function acquireHookLock() {
   if (fs.existsSync(lockFile)) {
     const pid = Number(String(fs.readFileSync(lockFile, 'utf8')).trim());
     if (processoVivo(pid)) return null;
-    try {
-      fs.rmSync(lockFile, { force: true });
-    } catch { /* ignore */ }
+    apagarArquivo(lockFile);
   }
   try {
     const fd = fs.openSync(lockFile, 'wx');
@@ -147,9 +152,7 @@ function releaseHookLock(fd) {
   try {
     if (typeof fd === 'number') fs.closeSync(fd);
   } catch { /* ignore */ }
-  try {
-    fs.rmSync(lockFile, { force: true });
-  } catch { /* ignore */ }
+  apagarArquivo(lockFile);
 }
 
 /* ---------- o que mudou ---------- */
@@ -609,7 +612,7 @@ async function main() {
         cookie,
       });
       if (atualizado.ok && atualizado.json?.success !== false) {
-        if (nota) fs.rmSync(notaFile, { force: true });
+        if (nota) apagarArquivo(notaFile);
         writeState({
           ...readState(),
           fingerprint,
@@ -656,7 +659,7 @@ async function main() {
       return reply({ user_message: `Não consegui criar o ticket interno no ScrumHub: ${created.json?.error || created.json?.message || `HTTP ${created.status}`}` });
     }
 
-    if (nota) fs.rmSync(notaFile, { force: true });
+    if (nota) apagarArquivo(notaFile);
     const ticket = created.json?.data || created.json || {};
     const id = Number(ticket.id || ticket.ticket_id) || null;
     const anterior = readState();
