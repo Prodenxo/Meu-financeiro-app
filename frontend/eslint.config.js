@@ -1,4 +1,5 @@
 const expo = require('eslint-config-expo/flat');
+const globals = require('globals');
 
 module.exports = [
   ...expo,
@@ -21,5 +22,9 @@ module.exports = [
       'react-hooks/immutability': 'warn',
       'react-hooks/preserve-manual-memoization': 'warn',
     },
+  },
+  {
+    files: ['**/__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
+    languageOptions: { globals: { ...globals.jest, ...globals.node } },
   },
 ];
