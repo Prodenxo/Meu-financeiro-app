@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppBrandLogo } from '@/components/shell/AppBrandLogo';
 import { TOUCH_MIN } from './overviewTokens';
 
-function initialsOf(name) {
+export function initialsOf(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
   const first = parts[0][0] || '';

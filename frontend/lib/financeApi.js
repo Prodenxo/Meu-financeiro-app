@@ -6,6 +6,7 @@ import { getMeiApiAuthHeaders, getMeiApiUrl } from '@/lib/apiClient';
 import { supabase } from '@/lib/supabase';
 import { normalizeLancamentoRow } from '@/lib/finance/normalize';
 import { normalizeContaRow } from '@/lib/finance/contas';
+import { normalizeRecorrenciaRow } from '@/lib/finance/recorrencias';
 
 const REQUEST_TIMEOUT_MS = 20000;
 
@@ -30,22 +31,25 @@ const buildUrl = (path) => {
   }
 };
 
-const buildHeaders = async () => {
+const buildHeaders = async (extra) => {
   try {
-    return await getMeiApiAuthHeaders();
+    return await getMeiApiAuthHeaders(extra);
   } catch {
     throw new FinanceApiError('Sua sessão terminou. Entre novamente.', { kind: 'auth', status: 401 });
   }
 };
 
-async function fetchOnce(url, signal) {
+async function fetchOnce(url, signal, method = 'GET', body) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const onAbort = () => controller.abort();
   signal?.addEventListener?.('abort', onAbort);
   try {
-    const headers = await buildHeaders();
-    return await fetch(url, { method: 'GET', headers, cache: 'no-store', signal: controller.signal });
+    const hasBody = body !== undefined;
+    const headers = await buildHeaders(hasBody ? { 'Content-Type': 'application/json' } : undefined);
+    const init = { method, headers, cache: 'no-store', signal: controller.signal };
+    if (hasBody) init.body = JSON.stringify(body);
+    return await fetch(url, init);
   } catch (error) {
     if (error instanceof FinanceApiError) throw error;
     if (signal?.aborted) throw error;
@@ -68,17 +72,20 @@ async function readPayload(response) {
   }
 }
 
-/** GET autenticado; renova a sessão e tenta de novo uma vez se o servidor responder 401. */
-export async function financeGet(path, { signal } = {}) {
+/**
+ * Chamada autenticada; renova a sessão e tenta de novo uma vez se o servidor responder 401
+ * (o 401 vem do middleware de auth, antes de qualquer gravação).
+ */
+export async function financeRequest(method, path, body, { signal } = {}) {
   const url = buildUrl(path);
-  let response = await fetchOnce(url, signal);
+  let response = await fetchOnce(url, signal, method, body);
 
   if (response.status === 401) {
     const { data, error } = await supabase.auth.refreshSession();
     if (error || !data?.session) {
       throw new FinanceApiError('Sua sessão terminou. Entre novamente.', { kind: 'auth', status: 401 });
     }
-    response = await fetchOnce(url, signal);
+    response = await fetchOnce(url, signal, method, body);
   }
 
   const payload = await readPayload(response);
@@ -92,9 +99,69 @@ export async function financeGet(path, { signal } = {}) {
   return payload ? payload.data : null;
 }
 
+export function financeGet(path, opts) {
+  return financeRequest('GET', path, undefined, opts);
+}
+
 export async function fetchTransactions(opts) {
   const rows = await financeGet('/transactions', opts);
   return (Array.isArray(rows) ? rows : []).map(normalizeLancamentoRow);
+}
+
+export async function fetchRecorrencias(opts) {
+  const rows = await financeGet('/recorrencias', opts);
+  return (Array.isArray(rows) ? rows : []).map(normalizeRecorrenciaRow);
+}
+
+const normalizeSkip = (s) => ({ recorrencia_id: String(s.recorrencia_id), ano_mes: String(s.ano_mes) });
+
+async function currentUserIdOrThrow() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData?.session?.user?.id;
+  if (!userId) {
+    throw new FinanceApiError('Sua sessão terminou. Entre novamente.', { kind: 'auth', status: 401 });
+  }
+  return userId;
+}
+
+/**
+ * Meses pulados das recorrências (lançamento recorrente excluído só naquele mês).
+ * Servidor sem a rota (404): lê com o token do usuário, como o site (RLS isola os dados).
+ */
+export async function fetchRecorrenciaSkips(opts) {
+  try {
+    const rows = await financeGet('/recorrencias/skips', opts);
+    return (Array.isArray(rows) ? rows : []).map(normalizeSkip);
+  } catch (error) {
+    if (!(error instanceof FinanceApiError) || error.status !== 404) throw error;
+  }
+  const userId = await currentUserIdOrThrow();
+  const { data, error } = await supabase
+    .from('recorrencia_skips')
+    .select('recorrencia_id, ano_mes')
+    .eq('user_id', userId);
+  if (error) {
+    throw new FinanceApiError('Não foi possível carregar as recorrências.', { kind: 'http' });
+  }
+  return (data || []).map(normalizeSkip);
+}
+
+export async function createTransaction(payload) {
+  return normalizeLancamentoRow(await financeRequest('POST', '/transactions', payload));
+}
+
+export async function updateTransaction(id, patch) {
+  return normalizeLancamentoRow(await financeRequest('PUT', '/transactions', { ...patch, id }));
+}
+
+/** `escopo`: 'este' | 'futuros' | 'todos' (os dois últimos só para lançamento recorrente). */
+export async function deleteTransaction(id, escopo = 'este') {
+  const qs = new URLSearchParams({ id: String(id), escopo });
+  await financeRequest('DELETE', `/transactions?${qs.toString()}`);
+}
+
+export async function createRecorrencia(payload) {
+  return financeRequest('POST', '/recorrencias', payload);
 }
 
 const sortContasByName = (contas) =>
@@ -112,11 +179,7 @@ export async function fetchContas(opts) {
     if (!(error instanceof FinanceApiError) || error.status !== 404) throw error;
   }
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  const userId = sessionData?.session?.user?.id;
-  if (!userId) {
-    throw new FinanceApiError('Sua sessão terminou. Entre novamente.', { kind: 'auth', status: 401 });
-  }
+  const userId = await currentUserIdOrThrow();
   const { data, error } = await supabase
     .from('contas_financeiras')
     .select('*')

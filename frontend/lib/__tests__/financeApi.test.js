@@ -1,5 +1,8 @@
 import {
   FinanceApiError,
+  createTransaction,
+  deleteTransaction,
+  updateTransaction,
   fetchContas,
   fetchTransactions,
   financeGet,
@@ -75,6 +78,36 @@ describe('financeGet', () => {
     const error = await financeGet('/x').catch((e) => e);
     expect(error).toBeInstanceOf(FinanceApiError);
     expect(error).toMatchObject({ kind: 'http', status: 500, message: 'Falhou' });
+  });
+});
+
+describe('gravações', () => {
+  it('POST envia JSON e devolve a linha normalizada', async () => {
+    global.fetch.mockResolvedValueOnce(
+      jsonResponse(200, { success: true, data: { id: 9, tipo: 'saida', valor: '5', status: 'a_pagar' } }),
+    );
+    const row = await createTransaction({ tipo: 'saída', valor: 5 });
+    expect(row).toMatchObject({ id: '9', tipo: 'saída', valor: 5 });
+    const [, init] = global.fetch.mock.calls[0];
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({ tipo: 'saída', valor: 5 });
+  });
+
+  it('DELETE leva id e escopo na query', async () => {
+    global.fetch.mockResolvedValueOnce(jsonResponse(200, { success: true, data: { success: true } }));
+    await deleteTransaction('abc', 'futuros');
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url).toBe('http://api.test/api/transactions?id=abc&escopo=futuros');
+    expect(init.method).toBe('DELETE');
+    expect(init.body).toBeUndefined();
+  });
+
+  it('erro na gravação não é engolido', async () => {
+    global.fetch.mockResolvedValueOnce(jsonResponse(400, { success: false, message: 'Conta não encontrada' }));
+    await expect(updateTransaction('1', { conta_id: 'x' })).rejects.toMatchObject({
+      kind: 'http',
+      message: 'Conta não encontrada',
+    });
   });
 });
 
