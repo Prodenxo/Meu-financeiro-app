@@ -298,6 +298,60 @@ export async function fetchCategories(opts) {
   return toCategoryMaps(await financeGet('/categories', opts));
 }
 
+/** Categorias do usuário como o servidor devolve (o servidor já copia as globais para o usuário). */
+export async function fetchCategoriaRows(opts) {
+  const rows = await financeGet('/categories', opts);
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => row?.id != null && String(row?.nome || '').trim())
+    .map((row) => ({
+      id: String(row.id),
+      nome: String(row.nome).trim(),
+      tipo: String(row.tipo || ''),
+      user_id: row.user_id ? String(row.user_id) : null,
+    }));
+}
+
+/** `payload` = { nome, tipo } já validado por `validateCategoriaForm` (o servidor repete as regras). */
+export async function createCategoria(payload) {
+  return financeRequest('POST', '/categories', payload);
+}
+
+/**
+ * Servidor anterior a esta versão não renomeia os lançamentos (resposta sem `renamed_transactions`):
+ * renomeia com o token do usuário, como o site, para eles não virarem "Sem categoria".
+ */
+export async function updateCategoria(id, payload, { previousName } = {}) {
+  const data = await financeRequest('PUT', '/categories', { id: Number(id), nome: payload.nome, tipo: payload.tipo });
+  const renamed = previousName && previousName !== payload.nome;
+  if (renamed && (data == null || data.renamed_transactions === undefined)) {
+    const userId = await currentUserIdOrThrow();
+    const { error } = await supabase
+      .from('lancamentos_id')
+      .update({ classificacao: payload.nome })
+      .eq('user_id', userId)
+      .eq('classificacao', previousName);
+    if (error) {
+      throw new FinanceApiError('Categoria salva, mas os lançamentos não foram renomeados. Tente de novo.', {
+        kind: 'http',
+      });
+    }
+  }
+  return data;
+}
+
+/**
+ * Exclui a categoria; o servidor move os lançamentos dela para a categoria padrão do tipo.
+ * `movedTo` nulo = servidor anterior a esta versão (só apagou; os lançamentos aparecem em "Sem categoria").
+ */
+export async function deleteCategoria(id) {
+  const qs = new URLSearchParams({ id: String(id) });
+  const data = await financeRequest('DELETE', `/categories?${qs.toString()}`);
+  return {
+    movedTo: data?.moved_to ? String(data.moved_to) : null,
+    moved: Number(data?.moved_transactions) || 0,
+  };
+}
+
 /** `month` em 1–12. */
 export async function fetchBudgetSummary({ year, month }, opts) {
   const rows = await financeGet(`/categories/budgets/summary?year=${year}&month=${month}`, opts);
