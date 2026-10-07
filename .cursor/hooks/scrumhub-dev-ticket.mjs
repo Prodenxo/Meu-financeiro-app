@@ -188,14 +188,21 @@ function mudancasDesdeUltimoTicket(state) {
   if (ultimo === head) return { map: new Map(), head, modo: '' };
 
   const map = new Map();
+  let base = '';
   if (ultimo && git(['rev-parse', '--verify', ultimo])) {
+    base = ultimo;
     aplicarNameStatusNoMapa(map, git(['diff', '--name-status', `${ultimo}..${head}`]).split(/\r?\n/));
-    return { map, head, modo: 'range' };
+  } else {
+    aplicarNameStatusNoMapa(map, git(['diff-tree', '--no-commit-id', '--name-status', '-r', head]).split(/\r?\n/));
   }
-
-  aplicarNameStatusNoMapa(map, git(['diff-tree', '--no-commit-id', '--name-status', '-r', head]).split(/\r?\n/));
-  return { map, head, modo: 'head' };
+  for (const file of [...map.keys()]) {
+    if (!ehImportante(file)) map.delete(file);
+  }
+  return { map, head, base, modo: base ? 'range' : 'head' };
 }
+
+/** Intervalo de commits do ticket (modo range/head), para descrição e contagem de linhas. */
+let intervalo = null;
 
 /** Map arquivo -> 'novo' | 'alterado' | 'removido' | 'renomeado' (só os importantes). */
 function mudancas() {
@@ -275,10 +282,14 @@ function agruparPorArea(map) {
 
 const notaFile = path.join(configDir, 'nota-em-andamento-meu-financeiro-app.txt');
 
-/** Primeira linha = título. O resto = o que mudou, em linguagem de gente. */
-function notaHumana() {
+/**
+ * Primeira linha = título. O resto = o que mudou, em linguagem de gente.
+ * `desde`: a nota precisa ter sido escrita depois desse instante (último ticket), senão é de outro trabalho.
+ */
+function notaHumana(desde = 0) {
   if (!fs.existsSync(notaFile)) return null;
-  if (Date.now() - fs.statSync(notaFile).mtimeMs > NOTA_TTL_MS) return null;
+  const mtime = fs.statSync(notaFile).mtimeMs;
+  if (Date.now() - mtime > NOTA_TTL_MS || mtime <= desde) return null;
   const raw = fs.readFileSync(notaFile, 'utf8').trim();
   if (!raw) return null;
   const [primeira, ...resto] = raw.split(/\r?\n/);
@@ -290,13 +301,22 @@ function notaHumana() {
 
 function tituloDoTicket(map) {
   const grupos = agruparPorArea(map);
-  const partes = [...grupos].map(([area, itens]) => `${area}: ${lista(itens.map((i) => moduloDoArquivo(i.file)))}`);
+  const partes = [...grupos].map(([area, itens]) => {
+    const vivos = itens.filter((i) => i.status !== 'removido');
+    return `${area}: ${lista((vivos.length ? vivos : itens).map((i) => moduloDoArquivo(i.file)))}`;
+  });
   return partes.join(' · ').slice(0, 140);
 }
 
 function resumoDeLinhas() {
   const sha = commitPedido();
-  const shortstat = sha ? git(['show', '--shortstat', '--format=', sha]) : git(['diff', '--shortstat', 'HEAD']);
+  const shortstat = sha
+    ? git(['show', '--shortstat', '--format=', sha])
+    : intervalo?.base
+      ? git(['diff', '--shortstat', `${intervalo.base}..${intervalo.head}`])
+      : intervalo?.head
+        ? git(['show', '--shortstat', '--format=', intervalo.head])
+        : git(['diff', '--shortstat', 'HEAD']);
   const mais = /(\d+) insert/.exec(shortstat)?.[1];
   const menos = /(\d+) delet/.exec(shortstat)?.[1];
   return [mais && `${mais} linhas a mais`, menos && `${menos} linhas a menos`].filter(Boolean).join(' e ');
@@ -321,10 +341,17 @@ function descricaoDoTicket(map) {
 
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD']);
   const sha = commitPedido();
+  const commits = sha
+    ? `Commit ${sha.slice(0, 8)}.`
+    : intervalo?.base
+      ? `Commits ${intervalo.base.slice(0, 8)}..${intervalo.head.slice(0, 8)}.`
+      : intervalo?.head
+        ? `Commit ${intervalo.head.slice(0, 8)}.`
+        : 'Ainda sem commit.';
   const rodape = [
     `${map.size === 1 ? '1 arquivo' : `${map.size} arquivos`}${resumoDeLinhas() ? `, ${resumoDeLinhas()}` : ''}.`,
     branch ? `Branch ${branch}.` : '',
-    sha ? `Commit ${sha.slice(0, 8)}.` : 'Ainda sem commit.',
+    commits,
   ].filter(Boolean).join(' ');
 
   return [abertura, '', ...blocos, '', rodape].join('\n').slice(0, 8000);
@@ -515,12 +542,14 @@ async function main() {
       }
       modoCommit = 'range';
       head = diffRange.to;
+      intervalo = { base: diffRange.from, head: diffRange.to };
     } else if (!map.size && !commitPedido()) {
       const desde = mudancasDesdeUltimoTicket(stateEarly);
       map = desde.map;
       if (desde.modo) {
         modoCommit = desde.modo;
         head = desde.head || head;
+        intervalo = { base: desde.base, head: desde.head };
       }
     }
 
@@ -577,11 +606,15 @@ async function main() {
       return reply({ user_message: `Correção anotada no ticket #${ticketAlvo} (sem abrir ticket novo).` });
     }
 
-    const nota = modoCommit === 'working' ? notaHumana() : null;
+    // Pedido manual por commit usa o texto do commit; nos demais a nota vale se foi escrita depois do último ticket.
+    const nota = sha ? null : notaHumana(modoCommit === 'working' ? 0 : Date.parse(state.at || 0) || 0);
     const nome = nota?.nome || tituloDoTicket(map);
     const descricao = nota?.descricao || descricaoDoTicket(map);
 
     if (fixTicketId) {
+      if (process.env.SCRUMHUB_DRY_RUN) {
+        return reply({ user_message: `[corrigiria #${fixTicketId}]\n${nome}\n\n${descricao}` });
+      }
       const atualizado = await requestWithFallback(`/tickets-pai/${fixTicketId}`, {
         method: 'PUT',
         body: { nome, descricao, prioridade: PRIORIDADE },
@@ -592,6 +625,7 @@ async function main() {
           user_message: `Não corrigi o ticket #${fixTicketId}: ${atualizado.json?.error || atualizado.json?.message || `HTTP ${atualizado.status}`}`,
         });
       }
+      if (nota) apagarArquivo(notaFile);
       return reply({ user_message: `Ticket #${fixTicketId} corrigido: ${nome}` });
     }
 
