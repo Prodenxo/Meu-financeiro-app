@@ -46,12 +46,3 @@ export function getManagedUserActions(
     canResetPassword,
   };
 };
-
-/** Admin vê o toggle MEI se o módulo estiver ativo na empresa ou se já houver MEI na conta (para poder desligar). */
-export function shouldShowAdminMeiToggle(
-  empresas: Array<{ max_mei?: number | null }>,
-  options: { meiActive: boolean; userHasMei?: boolean | null }
-): boolean {
-  const moduleActive = empresas.some((e) => (e.max_mei ?? 0) > 0);
-  return moduleActive || options.meiActive || options.userHasMei === true;
-}

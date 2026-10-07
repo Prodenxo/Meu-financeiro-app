@@ -4,14 +4,19 @@ import {
   getBottomNavItems,
   isBottomNavMenuActive,
   resolveAppScreenFromPath,
+  SCREEN_TO_HREF,
 } from '../appNavConfig';
 
 describe('appNavConfig — menu inferior', () => {
-  it('abas fixas: Início, Transações, Contas, Agenda (sem MEI)', () => {
+  it('abas fixas: Início, Transações, Contas, Agenda', () => {
     const items = getBottomNavItems();
     expect(items.map((i) => i.screen)).toEqual(['Dashboard', 'Transacoes', 'Contas', 'Agenda']);
     expect(items.map((i) => i.shortLabel)).toEqual(['Início', 'Transações', 'Contas', 'Agenda']);
-    expect(items.some((i) => i.screen === 'MeuMei')).toBe(false);
+  });
+
+  it('não tem área MEI no app', () => {
+    expect(APP_NAV_ITEMS.some((i) => /mei/i.test(i.label))).toBe(false);
+    expect(Object.values(SCREEN_TO_HREF).some((href) => href.includes('/mei'))).toBe(false);
   });
 
   it('ignora itens que não existem no catálogo', () => {

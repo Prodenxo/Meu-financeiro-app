@@ -354,7 +354,7 @@ export default function ResetPasswordScreen ({
         }
         showIllustration
         illustrationHeadline="Conta protegida"
-        illustrationSubheadline="Senha forte, acesso seguro ao Meu Financeiro e MEI Infinito."
+        illustrationSubheadline="Senha forte, acesso seguro ao Meu Financeiro."
       >
         {formBody}
       </AuthLayoutWeb>

@@ -127,7 +127,7 @@ export function AuthHeroPreview ({ compact = false }: { compact?: boolean }) {
 
         <View style={stylesLocal.pillRow}>
           <FeaturePill icon="logo-whatsapp" label="Midas" />
-          <FeaturePill icon="document-text-outline" label="MEI / DAS" />
+          <FeaturePill icon="calendar-outline" label="Agenda" />
           <FeaturePill icon="pie-chart-outline" label="Orçamentos" />
         </View>
       </MfGlassCard>

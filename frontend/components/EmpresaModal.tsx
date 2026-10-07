@@ -56,10 +56,6 @@ export default function EmpresaModal({ visible, initial, onClose, onSuccess }: E
   const [cnpjError, setCnpjError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  /** Estado separado para a chave MEI — não depende do valor numérico do input. */
-  const [meiEnabled, setMeiEnabled] = useState(false);
-  const [meiSlotsText, setMeiSlotsText] = useState('1');
-
   const wasVisibleRef = useRef(false);
 
   useEffect(() => {
@@ -70,17 +66,7 @@ export default function EmpresaModal({ visible, initial, onClose, onSuccess }: E
     if (wasVisibleRef.current) return;
     wasVisibleRef.current = true;
 
-    const base = initial || {};
-    const maxMeiStored =
-      base.max_mei === null || base.max_mei === undefined ? 0 : Number(base.max_mei) || 0;
-    const isMeiOn = maxMeiStored > 0;
-
-    setForm({
-      ...base,
-      max_mei: maxMeiStored,
-    });
-    setMeiEnabled(isMeiOn);
-    setMeiSlotsText(isMeiOn ? String(Math.trunc(maxMeiStored)) : '1');
+    setForm({ ...(initial || {}) });
     setErrors({});
     setCnpjError('');
     setSubmitError('');
@@ -94,25 +80,6 @@ export default function EmpresaModal({ visible, initial, onClose, onSuccess }: E
   const setNumField = (field: keyof EmpresaFullData, value: number | null) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const meiSlots = (() => {
-    if (!meiEnabled) return 0;
-    const n = parseInt(meiSlotsText, 10);
-    return Number.isFinite(n) && n >= 1 ? n : 1;
-  })();
-
-  const toggleMeiModule = () => {
-    if (meiEnabled) {
-      setMeiEnabled(false);
-      setNumField('max_mei', 0);
-    } else {
-      setMeiEnabled(true);
-      const current = parseInt(meiSlotsText, 10);
-      const val = Number.isFinite(current) && current >= 1 ? current : 1;
-      setMeiSlotsText(String(val));
-      setNumField('max_mei', val);
-    }
   };
 
   // Clientes PF/Outros: null = ilimitado (padrão); número > 0 = limite explícito.
@@ -167,13 +134,6 @@ export default function EmpresaModal({ visible, initial, onClose, onSuccess }: E
     if (cnpjDigits && cnpjDigits.length !== 14) {
       newErrors.cnpj = 'CNPJ deve ter 14 dígitos ou fique em branco';
     }
-    if (meiEnabled) {
-      const n = parseInt(meiSlotsText, 10);
-      if (!Number.isFinite(n) || n < 1) {
-        setSubmitError('Informe ao menos 1 vaga MEI (módulo não pode ficar zerado).');
-        return false;
-      }
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -186,7 +146,6 @@ export default function EmpresaModal({ visible, initial, onClose, onSuccess }: E
       const payload: EmpresaFullData = {
         ...form,
         cnpj: onlyDigits(form.cnpj || '') || undefined,
-        max_mei: meiSlots,
       };
       let result: EmpresaFullData;
       if (isEdit && initial?.id) {
@@ -403,53 +362,6 @@ export default function EmpresaModal({ visible, initial, onClose, onSuccess }: E
             </View>
 
             <Text style={styles.sectionLabel}>Limites de usuários</Text>
-            <View style={[styles.field, styles.limitsBox]}>
-              <View style={styles.limitsHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Módulo MEI</Text>
-                  <Text style={styles.helpText}>
-                    {meiEnabled
-                      ? 'Defina quantas vagas MEI (CNPJ) esta empresa pode ter.'
-                      : 'Desativado — esta empresa não pode ter clientes MEI.'}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={[styles.toggle, meiEnabled && styles.toggleOn]}
-                  onPress={toggleMeiModule}
-                  accessibilityLabel={meiEnabled ? 'Desativar módulo MEI' : 'Ativar módulo MEI'}
-                  accessibilityRole="switch"
-                  accessibilityState={{ checked: meiEnabled }}
-                >
-                  <View style={[styles.toggleKnob, meiEnabled && styles.toggleKnobOn]} />
-                </TouchableOpacity>
-              </View>
-              {meiEnabled ? (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={styles.label}>Quantidade de vagas MEI</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={meiSlotsText}
-                    onChangeText={(t) => {
-                      const digits = t.replace(/\D/g, '').slice(0, 4);
-                      setMeiSlotsText(digits);
-                      if (!digits) return;
-                      const n = Math.min(9999, Math.max(1, parseInt(digits, 10)));
-                      if (Number.isFinite(n)) setNumField('max_mei', n);
-                    }}
-                    onBlur={() => {
-                      if (!meiSlotsText || parseInt(meiSlotsText, 10) < 1) {
-                        setMeiSlotsText('1');
-                        setNumField('max_mei', 1);
-                      }
-                    }}
-                    placeholder="Ex.: 1, 3, 10"
-                    placeholderTextColor={theme.placeholder}
-                    keyboardType="number-pad"
-                    accessibilityLabel="Quantidade de vagas MEI"
-                  />
-                </View>
-              ) : null}
-            </View>
             <View style={[styles.field, styles.limitsBox]}>
               <View style={styles.limitsHeader}>
                 <View style={{ flex: 1 }}>

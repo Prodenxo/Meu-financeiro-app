@@ -9,7 +9,6 @@ import { getTechTokens, mfTechPanelChrome } from '@/lib/techDesign';
 import {
   APP_NAV_ITEMS,
   SCREEN_TO_HREF,
-  filterNavItems,
   type AppNavItem,
 } from '@/lib/appNavConfig';
 import type { AppScreenName } from '@/lib/navigationContext';
@@ -19,7 +18,6 @@ import { SignOutHeaderButton } from '../settings/SignOutHeaderButton';
 
 type Props = {
   current: AppScreenName;
-  showMeiTab: boolean;
   compact?: boolean;
   onOpenMenu?: () => void;
   onOpenSettings: () => void;
@@ -34,7 +32,6 @@ function initialsFromName(name: string): string {
 
 export default function AppTopNav({
   current,
-  showMeiTab,
   compact = false,
   onOpenMenu,
   onOpenSettings,
@@ -50,10 +47,7 @@ export default function AppTopNav({
   );
   const navChrome = useMemo(() => mfTechPanelChrome(isDarkMode), [isDarkMode]);
 
-  const topItems = useMemo(
-    () => filterNavItems(APP_NAV_ITEMS, showMeiTab).filter((i) => i.showInTopNav),
-    [showMeiTab],
-  );
+  const topItems = useMemo(() => APP_NAV_ITEMS.filter((i) => i.showInTopNav), []);
 
   const displayName =
     (user?.user_metadata?.full_name as string | undefined) ||

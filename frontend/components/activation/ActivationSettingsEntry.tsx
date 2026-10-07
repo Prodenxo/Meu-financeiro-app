@@ -74,7 +74,7 @@ export function ActivationSettingsEntry () {
       <Text style={[sitePanelTitleStyle, { color: tokens.textPrimary }]}>Configuração da conta</Text>
       <Text style={[siteHintStyle, styles.desc, { color: tokens.textSecondary }]}>
         {summary.coreDone
-          ? `Essencial completo (${summary.completed}/${summary.total}). Faltam ${summary.pendingCount} passo${summary.pendingCount === 1 ? '' : 's'} — MEI ou recomendados.`
+          ? `Essencial completo (${summary.completed}/${summary.total}). Faltam ${summary.pendingCount} passo${summary.pendingCount === 1 ? '' : 's'} recomendado${summary.pendingCount === 1 ? '' : 's'}.`
           : 'Nome, WhatsApp, conta, lançamento e orçamento — o essencial para começar.'}
       </Text>
 

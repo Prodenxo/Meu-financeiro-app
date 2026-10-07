@@ -441,8 +441,7 @@ export function AccessRequestForm({ onGoToLogin, onDone }: AccessRequestFormProp
         </View>
         {pessoaTipo === 'pf' ? (
           <Text style={{ color: palette.subtitleText, fontSize: 12, marginTop: 8, lineHeight: 18 }}>
-            Após a aprovação você fica como administrador. MEI e notas fiscais só liberam
-            depois de cadastrar um CNPJ.
+            Após a aprovação você fica como administrador.
           </Text>
         ) : null}
       </View>

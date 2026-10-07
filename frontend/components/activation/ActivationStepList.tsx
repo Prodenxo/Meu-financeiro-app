@@ -29,9 +29,6 @@ const STEP_ICONS: Record<string, IonName> = {
   first_transaction: 'swap-horizontal-outline',
   first_budget: 'pie-chart-outline',
   google_calendar: 'calendar-outline',
-  mei_certificate: 'document-attach-outline',
-  mei_das_view: 'receipt-outline',
-  mei_nfse_catalog: 'people-outline',
 }
 
 function resolveIcon (stepId: string): IonName {
@@ -194,14 +191,12 @@ export function ActivationStepList ({
 
   const groups = useMemo(() => {
     const core = steps.filter((s) => s.required)
-    const optional = steps.filter((s) => !s.required && !s.id.startsWith('mei_'))
-    const mei = steps.filter((s) => s.id.startsWith('mei_'))
-    return { core, optional, mei }
+    const optional = steps.filter((s) => !s.required)
+    return { core, optional }
   }, [steps])
 
   const hasCore = groups.core.length > 0
   const hasOptional = groups.optional.length > 0
-  const hasMei = groups.mei.length > 0
 
   return (
     <MfGlassCard padding="none" intensity="strong" techVariant="surface">
@@ -221,15 +216,6 @@ export function ActivationStepList ({
         isCompact={isCompact}
         onStepPress={onStepPress}
         showTopBorder={hasCore && hasOptional}
-      />
-      <StepSection
-        eyebrow="Para MEI"
-        steps={groups.mei}
-        theme={theme}
-        isDarkMode={isDarkMode}
-        isCompact={isCompact}
-        onStepPress={onStepPress}
-        showTopBorder={(hasCore || hasOptional) && hasMei}
       />
     </MfGlassCard>
   )

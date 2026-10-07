@@ -7,9 +7,6 @@ export const ACTIVATION_ROUTE_TO_SCREEN: Record<string, AppScreenName> = {
   'contas:new': 'Contas',
   'transactions:new': 'Transacoes',
   orcamentos: 'Orcamentos',
-  'mei:certificate': 'MeuMei',
-  'mei:das': 'MeuMei',
-  'mei:nfse': 'MeuMei',
 }
 
 export function activationRouteToScreen (route: string): AppScreenName | null {

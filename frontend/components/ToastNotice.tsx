@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeStore } from '../store/themeStore';
 import { getTheme, mfSpacing } from '../lib/theme';
 
-/** Acima de top nav (50), modais MEI (11000) e overlays. */
+/** Acima de top nav (50), modais (11000) e overlays. */
 const TOAST_Z_INDEX = 30000;
 const WEB_SHELL_TOP_MIN_WIDTH = 960;
 

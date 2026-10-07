@@ -4,7 +4,6 @@ import { usePathname, useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { getTheme } from '@/lib/theme';
-import { canAccessMeiArea } from '@/lib/meiAccess';
 import { supabase } from '@/lib/supabase';
 import SideDrawer from '@/components/SideDrawer';
 import PendingApprovalScreen from '@/screens/PendingApprovalScreen';
@@ -12,7 +11,6 @@ import type { AppScreenName } from '@/lib/navigationContext';
 import {
   APP_NAV_ITEMS,
   SCREEN_TO_HREF,
-  filterNavItems,
   resolveAppScreenFromPath,
 } from '@/lib/appNavConfig';
 import { AppShell, useShellLayout } from '@/components/shell';
@@ -40,25 +38,20 @@ export default function AppLayout() {
   const [accessStatus, setAccessStatus] = useState<AccessStatus>('checking');
   const [activationMenuHint, setActivationMenuHint] = useState<string | null>(null);
   const { isDarkMode } = useThemeStore();
-  const { user, role, mei, empresaId, sessionRestored } = useAuthStore();
+  const { user, role, empresaId, sessionRestored } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname() ?? '/';
   const { isWebDesktop, usesDrawerNav } = useShellLayout();
 
-  const showMeiTab = useMemo(() => canAccessMeiArea(role, mei), [role, mei]);
-  const navItems = useMemo(
-    () => filterNavItems(APP_NAV_ITEMS, showMeiTab),
-    [showMeiTab]
-  );
   const drawerItems = useMemo(
     () =>
-      navItems.map((item) => ({
+      APP_NAV_ITEMS.map((item) => ({
         name: item.screen,
         icon: item.icon,
         activeIcon: item.activeIcon,
         label: item.label,
       })),
-    [navItems]
+    []
   );
   const theme = useMemo(() => getTheme(isDarkMode), [isDarkMode]);
   const styles = useMemo(() => createStyles(isDarkMode), [isDarkMode]);
@@ -381,7 +374,6 @@ export default function AppLayout() {
       <View style={styles.outer} {...(usesDrawerNav ? panResponder.panHandlers : {})}>
         <AppShell
           currentScreen={currentScreen}
-          showMeiTab={showMeiTab}
           navigateTo={navigateTo}
           openDrawer={openDrawer}
           showTopNav={!shellLocked}

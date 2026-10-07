@@ -11,7 +11,7 @@ function resolveApiUrl(): string {
 function logLocalhostBackendHint(apiUrl: string): void {
   if (typeof window === 'undefined' || !window.location?.hostname) return;
   if (!/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)) return;
-  console.log('[api] MEI backend:', apiUrl || '(não configurada)');
+  console.log('[api] backend:', apiUrl || '(não configurada)');
   if (apiUrl.includes('easypanel.host')) {
     console.error(
       '[api] ERRO: localhost apontou para Easypanel. Reinicie o Expo (npm start -c). ' +

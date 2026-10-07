@@ -139,7 +139,7 @@ export default function ActivationSetupScreen () {
               Deixe sua conta pronta
             </Text>
             <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
-              Complete os passos abaixo para usar transações, WhatsApp e MEI sem
+              Complete os passos abaixo para usar transações e WhatsApp sem
               atrito. Você pode pular e voltar em Configurações — ao entrar de novo,
               este guia reaparece até concluir.
             </Text>
@@ -150,7 +150,7 @@ export default function ActivationSetupScreen () {
               isDarkMode={dark}
               label={
                 (progress.isCoreComplete ?? progress.isComplete)
-                  ? 'Progresso geral (MEI e recomendados)'
+                  ? 'Progresso geral (com recomendados)'
                   : 'Passos obrigatórios'
               }
             />

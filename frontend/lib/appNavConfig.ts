@@ -9,7 +9,6 @@ export type AppNavItem = {
   label: string;
   icon: IoniconName;
   activeIcon: IoniconName;
-  requiresMeiAccess?: boolean;
   /** Exibido na barra superior (web) */
   showInTopNav?: boolean;
   /** Exibido na tab bar inferior (native) */
@@ -70,15 +69,6 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     showInBottomNav: true,
   },
   {
-    screen: 'MeuMei',
-    label: 'Meu MEI',
-    icon: 'briefcase-outline',
-    activeIcon: 'briefcase',
-    requiresMeiAccess: true,
-    showInTopNav: true,
-    showInBottomNav: true,
-  },
-  {
     screen: 'Configuracoes',
     label: 'Configurações',
     icon: 'settings-outline',
@@ -94,7 +84,6 @@ export const SCREEN_TO_HREF: Record<AppScreenName, string> = {
   Categorias: '/(app)/categorias',
   Orcamentos: '/(app)/orcamentos',
   Agenda: '/(app)/agenda',
-  MeuMei: '/(app)/mei',
   Configuracoes: '/(app)/configuracoes',
 };
 
@@ -108,7 +97,6 @@ const PATH_SUFFIX_TO_SCREEN: Record<string, AppScreenName> = {
   '/categorias': 'Categorias',
   '/orcamentos': 'Orcamentos',
   '/agenda': 'Agenda',
-  '/mei': 'MeuMei',
   '/configuracoes': 'Configuracoes',
 };
 
@@ -130,11 +118,7 @@ export function resolveAppScreenFromPath(pathname?: string | null): AppScreenNam
   return PATH_SUFFIX_TO_SCREEN[suffix] ?? 'Dashboard';
 }
 
-export function filterNavItems(items: AppNavItem[], showMei: boolean): AppNavItem[] {
-  return items.filter((item) => !item.requiresMeiAccess || showMei);
-}
-
-/** Abas fixas do menu inferior (celular). A área MEI não entra no app. */
+/** Abas fixas do menu inferior (celular). */
 export const BOTTOM_NAV_SCREENS: AppScreenName[] = ['Dashboard', 'Transacoes', 'Contas', 'Agenda'];
 
 /** Rótulo curto para caber na aba. */

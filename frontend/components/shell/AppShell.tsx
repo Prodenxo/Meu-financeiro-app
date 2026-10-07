@@ -13,7 +13,6 @@ import { useShellLayout } from './useShellLayout';
 
 type Props = {
   currentScreen: AppScreenName;
-  showMeiTab: boolean;
   navigateTo: (screen: AppScreenName) => void;
   /** Abre o menu lateral (aba "Mais" do menu inferior). */
   openDrawer?: () => void;
@@ -22,7 +21,6 @@ type Props = {
 };
 
 export default function AppShell({
-  showMeiTab,
   navigateTo,
   openDrawer,
   currentScreen,
@@ -54,7 +52,6 @@ export default function AppShell({
       {isWebDesktop && showTopNav ? (
         <AppTopNav
           current={currentScreen}
-          showMeiTab={showMeiTab}
           compact={false}
           onOpenSettings={() => navigateTo('Configuracoes')}
         />

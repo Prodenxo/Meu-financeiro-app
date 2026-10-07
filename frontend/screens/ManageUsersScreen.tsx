@@ -22,7 +22,6 @@ import { useThemeStore } from '../store/themeStore';
 import { getTheme, mfSpacing, type Theme } from '../lib/theme';
 import { getTechTokens, mfTechInsetSurface } from '../lib/techDesign';
 import { cleanPhone, hasRole } from '../lib/auth-roles';
-import { getMeiUserStatusShort, getMeiUserTypeLabel, isMeiSlotUser } from '../lib/meiUserSlot';
 import { getManagedUserActions } from '../lib/managedUserActions';
 import { formatPhoneBrCell } from '../lib/numberFormat';
 import {
@@ -45,17 +44,11 @@ import {
   type EmpresaOption,
 } from '../services/empresaService';
 import EmpresaModal from '../components/EmpresaModal';
-import { EmpresaStripeMeiBillingModal } from '../components/EmpresaStripeMeiBillingModal';
 import { InvitesTab } from '../components/admin/InvitesTab';
 import { ManageUsersPageChrome } from '../components/admin/ManageUsersPageChrome';
-import {
-  fetchAdminMeiCertificateStatus,
-  patchAdminMeiDocumentosAtivos,
-} from '../services/adminUserDataService';
 
 type RoleOption = 'admin' | 'usuario' | 'outsider';
 type TabKey = 'users' | 'invites' | 'empresas';
-type EmpresaMeiFilter = 'all' | 'active' | 'inactive';
 type ClipboardModule = typeof import('expo-clipboard');
 
 interface Props {
@@ -403,7 +396,6 @@ const UserCard = React.memo(function UserCard({
   const expiration = user.role === 'usuario' && user.expiresAt ? formatExpiration(user.expiresAt) : null;
   const metaLine = [
     user.empresaName || user.empresaId || 'Sem empresa',
-    getMeiUserStatusShort(user.mei),
     expiration?.label,
   ]
     .filter(Boolean)
@@ -522,14 +514,6 @@ const UserCard = React.memo(function UserCard({
           <Text style={styles.userMetaText} numberOfLines={1}>
             {user.empresaName || user.empresaId || 'Sem empresa'}
           </Text>
-        </View>
-        <View style={styles.userMetaItem}>
-          <Ionicons
-            name={isMeiSlotUser(user.mei) ? 'checkmark-circle-outline' : 'close-circle-outline'}
-            size={13}
-            color={isMeiSlotUser(user.mei) ? theme.success : theme.textTertiary}
-          />
-          <Text style={styles.userMetaText}>{getMeiUserStatusShort(user.mei)}</Text>
         </View>
         {expiration ? (
           <View style={styles.userMetaItem}>
@@ -661,7 +645,6 @@ interface EmpresaCardProps {
   onEdit: (empresa: EmpresaOption) => void;
   /** Superadmin: listar todos os usuários vinculados à empresa. */
   onViewMembers?: (empresa: EmpresaOption) => void;
-  onOpenBilling?: (empresa: EmpresaOption) => void;
   /** Superadmin: excluir a empresa (irreversível). */
   onDelete?: (empresa: EmpresaOption) => void;
 }
@@ -672,18 +655,10 @@ const EmpresaCard = React.memo(function EmpresaCard({
   styles,
   onEdit,
   onViewMembers,
-  onOpenBilling,
   onDelete,
 }: EmpresaCardProps) {
-  const renderNaoMeiLimit = (value?: number | null) =>
+  const renderUserLimit = (value?: number | null) =>
     value === null || value === undefined || value === 0 ? 'Sem limite' : String(value);
-
-  const renderMeiEmpresaCap = (value?: number | null) => {
-    const lim =
-      value === null || value === undefined ? 0 : Number(value) || 0;
-    if (lim > 0) return String(lim);
-    return 'Desligado';
-  };
 
   return (
     <View style={styles.empresaCard}>
@@ -703,13 +678,9 @@ const EmpresaCard = React.memo(function EmpresaCard({
             </Text>
             <View style={styles.empresaLimitsRow}>
               <View style={styles.empresaLimitChip}>
-                <Text style={styles.empresaLimitChipLabel}>MEI</Text>
-                <Text style={styles.empresaLimitChipValue}>{renderMeiEmpresaCap(empresa.max_mei)}</Text>
-              </View>
-              <View style={styles.empresaLimitChip}>
-                <Text style={styles.empresaLimitChipLabel}>Não MEI</Text>
+                <Text style={styles.empresaLimitChipLabel}>Usuários</Text>
                 <Text style={styles.empresaLimitChipValue}>
-                  {renderNaoMeiLimit(empresa.max_usuarios_nao_mei)}
+                  {renderUserLimit(empresa.max_usuarios_nao_mei)}
                 </Text>
               </View>
             </View>
@@ -735,16 +706,6 @@ const EmpresaCard = React.memo(function EmpresaCard({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="trash-outline" size={20} color={theme.error} />
-        </TouchableOpacity>
-      ) : null}
-      {onOpenBilling ? (
-        <TouchableOpacity
-          style={[styles.empresaCardActionBtn, { backgroundColor: theme.primaryLight }]}
-          onPress={() => onOpenBilling(empresa)}
-          accessibilityLabel={`Cobrança Stripe, ${empresa.empresa}`}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="card-outline" size={20} color={theme.primary} />
         </TouchableOpacity>
       ) : null}
     </View>
@@ -895,11 +856,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editOriginalEmail, setEditOriginalEmail] = useState('');
-  const [editMei, setEditMei] = useState(false);
-  const [editDocNfse, setEditDocNfse] = useState(true);
-  const [editDocNfe, setEditDocNfe] = useState(false);
-  const [editDocNfce, setEditDocNfce] = useState(false);
-  const [editDocsLoading, setEditDocsLoading] = useState(false);
   const [editExpiresAt, setEditExpiresAt] = useState('');
   const [editEmpresaModalOpen, setEditEmpresaModalOpen] = useState(false);
 
@@ -920,8 +876,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
   const [deleteEmpresaModalOpen, setDeleteEmpresaModalOpen] = useState(false);
   const [empresaToDelete, setEmpresaToDelete] = useState<EmpresaOption | null>(null);
 
-  /** Cobrança MEI (Stripe) — superadmin, API do site (`EXPO_PUBLIC_MEI_API_URL`). */
-  const [billingEmpresa, setBillingEmpresa] = useState<EmpresaOption | null>(null);
   /** Superadmin: painel com todos os usuários de uma empresa. */
   const [membersEmpresa, setMembersEmpresa] = useState<EmpresaOption | null>(null);
 
@@ -932,7 +886,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
   const [currentPage, setCurrentPage] = useState(1);
   const [empresaSearch, setEmpresaSearch] = useState('');
   const [empresaTabSearch, setEmpresaTabSearch] = useState('');
-  const [empresaMeiFilter, setEmpresaMeiFilter] = useState<EmpresaMeiFilter>('all');
   const [clipboardAvailable, setClipboardAvailable] = useState(true);
   const clipboardRef = useRef<ClipboardModule | null>(null);
 
@@ -1110,7 +1063,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
         phone: cleanedPhone || undefined,
         role: role === 'superadmin' ? selectedRole : 'usuario',
         empresaId: role === 'superadmin' ? selectedEmpresa?.id : undefined,
-        mei: false,
       };
 
       const result = await createUser(payload);
@@ -1135,11 +1087,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
     return users.filter((u) => u.empresaId === membersEmpresa.id);
   }, [users, membersEmpresa]);
 
-  const empresaMembersMeiCount = useMemo(
-    () => empresaMembersList.filter((u) => isMeiSlotUser(u.mei)).length,
-    [empresaMembersList],
-  );
-
   const openEmpresaMembers = (empresa: EmpresaOption) => {
     setMembersEmpresa(empresa);
   };
@@ -1163,29 +1110,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
     openEmpresaMembers(empresa);
   };
 
-  const loadEditMeiDocumentos = async (userId: string) => {
-    setEditDocsLoading(true);
-    try {
-      const status = await fetchAdminMeiCertificateStatus(userId);
-      const docs = status.documentosAtivos;
-      if (docs) {
-        setEditDocNfse(Boolean(docs.nfse));
-        setEditDocNfe(Boolean(docs.nfe));
-        setEditDocNfce(Boolean(docs.nfce));
-      } else {
-        setEditDocNfse(true);
-        setEditDocNfe(false);
-        setEditDocNfce(false);
-      }
-    } catch {
-      setEditDocNfse(true);
-      setEditDocNfe(false);
-      setEditDocNfce(false);
-    } finally {
-      setEditDocsLoading(false);
-    }
-  };
-
   const startEditUser = (user: ManagedUser) => {
     setEditingUser(user);
     setEditRole(
@@ -1203,8 +1127,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
     setEditPhone(user.phone || '');
     setEditEmail(user.email || '');
     setEditOriginalEmail(user.email || '');
-    setEditMei(user.mei === true);
-    void loadEditMeiDocumentos(user.id);
     if (user.expiresAt) {
       try {
         const d = new Date(user.expiresAt);
@@ -1239,9 +1161,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
       if (trimmedEditEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEditEmail)) {
         throw new Error('E-mail inválido');
       }
-      if (editMei && !editDocNfse && !editDocNfe && !editDocNfce) {
-        throw new Error('Com MEI ativo, libere ao menos um tipo de nota (NFS-e, NF-e ou NFC-e).');
-      }
       const expiresAtValue =
         editExpiresAt.trim() && editingUser.role === 'usuario'
           ? (() => {
@@ -1260,7 +1179,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
               displayName: editDisplayName || undefined,
               phone: cleanedPhone || undefined,
               ...emailField,
-              mei: editMei,
               ...(editRole === 'usuario' && !isEditingSelf && { expiresAt: expiresAtValue }),
               ...(isEditingSelf && editingUser.role === 'usuario' && { expiresAt: expiresAtValue }),
             }
@@ -1269,17 +1187,9 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
               displayName: editDisplayName || undefined,
               phone: cleanedPhone || undefined,
               ...emailField,
-              mei: editMei,
               expiresAt: expiresAtValue ?? null,
             };
       await updateUser(editingUser.id, payload);
-      if (editMei) {
-        await patchAdminMeiDocumentosAtivos(editingUser.id, {
-          nfse: editDocNfse,
-          nfe: editDocNfe,
-          nfce: editDocNfce,
-        });
-      }
       setSuccess(
         emailChanged
           ? `Usuário atualizado. Link de confirmação enviado para ${trimmedEditEmail}.`
@@ -1527,29 +1437,8 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
     const sorted = [...empresas].sort((a, b) =>
       displayName(a).localeCompare(displayName(b), 'pt-BR', { sensitivity: 'base' }),
     );
-    return sorted.filter((e) => {
-      const matchesName = !term || displayName(e).toLowerCase().includes(term);
-      if (!matchesName) return false;
-
-      if (empresaMeiFilter === 'all') return true;
-
-      const limiteMei =
-        e.max_mei === null || e.max_mei === undefined ? 0 : Number(e.max_mei) || 0;
-      const meiAtivo = limiteMei > 0;
-
-      return empresaMeiFilter === 'active' ? meiAtivo : !meiAtivo;
-    });
-  }, [empresas, empresaTabSearch, empresaMeiFilter, users]);
-
-  const totalEmpresasMeiAtivo = useMemo(
-    () =>
-      empresas.filter((e) => {
-        const limiteMei =
-          e.max_mei === null || e.max_mei === undefined ? 0 : Number(e.max_mei) || 0;
-        return limiteMei > 0;
-      }).length,
-    [empresas, users],
-  );
+    return sorted.filter((e) => !term || displayName(e).toLowerCase().includes(term));
+  }, [empresas, empresaTabSearch]);
 
   const blockedCount = useMemo(
     () => filteredUsers.filter((u) => u.status === false).length,
@@ -1942,59 +1831,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
                 ) : null}
               </View>
 
-              <View style={styles.empresaMeiFilterBlock}>
-                <Text style={styles.empresaMeiFilterLabel}>Filtro MEI</Text>
-                <View style={styles.empresaMeiFilterChips}>
-                  {(
-                    [
-                      { key: 'all' as const, label: 'Todos' },
-                      { key: 'active' as const, label: 'Ativos' },
-                      { key: 'inactive' as const, label: 'Inativos' },
-                    ] as const
-                  ).map(({ key, label }) => {
-                    const active = empresaMeiFilter === key;
-                    return (
-                      <TouchableOpacity
-                        key={key}
-                        style={[
-                          styles.meiFilterChip,
-                          { borderColor: theme.border, backgroundColor: theme.surface },
-                          active && {
-                            borderColor: theme.primary,
-                            backgroundColor: theme.primaryLight,
-                          },
-                        ]}
-                        onPress={() => setEmpresaMeiFilter(key)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: active }}
-                        accessibilityLabel={
-                          key === 'all'
-                            ? 'Mostrar todas as empresas'
-                            : key === 'active'
-                              ? 'Mostrar só empresas com MEI ativo'
-                              : 'Mostrar só empresas com MEI inativo'
-                        }
-                      >
-                        <Text
-                          style={[
-                            styles.meiFilterChipText,
-                            { color: theme.textSecondary },
-                            active && { color: theme.primary, fontWeight: '700' },
-                          ]}
-                        >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                <View style={[styles.meiStatBadge, { borderColor: theme.success + '55', backgroundColor: theme.successLight }]}>
-                  <Text style={[styles.meiStatBadgeText, { color: theme.success }]}>
-                    MEI ativo: {totalEmpresasMeiAtivo}
-                  </Text>
-                </View>
-              </View>
-
               <ManageUsersListBlock
                 data={filteredEmpresasList}
                 keyExtractor={(item: EmpresaOption) => item.id}
@@ -2007,7 +1843,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
                     onViewMembers={
                       role === 'superadmin' ? openEmpresaMembers : undefined
                     }
-                    onOpenBilling={role === 'superadmin' ? (e) => setBillingEmpresa(e) : undefined}
                     onDelete={role === 'superadmin' ? openDeleteEmpresaModal : undefined}
                   />
                 )}
@@ -2032,8 +1867,8 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
                           ? ''
                           : empresas.length === 0
                             ? 'Cadastre a primeira empresa para começar.'
-                            : empresaTabSearch.trim() || empresaMeiFilter !== 'all'
-                              ? 'Ajuste a busca ou o filtro MEI (todas / só ativo / só inativo).'
+                            : empresaTabSearch.trim()
+                              ? 'Ajuste a busca.'
                               : ''}
                       </Text>
                     </View>
@@ -2321,53 +2156,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
               <Ionicons name="chevron-down" size={16} color={theme.textSecondary} />
             </TouchableOpacity>
           </Field>
-        ) : null}
-
-        <View style={styles.switchRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.switchLabel}>Habilitar MEI</Text>
-            <Text style={styles.switchHelper}>
-              {editingUser?.id === currentUserId && editingUser?.mei === true && !editMei
-                ? 'Desligue para remover o módulo MEI da sua conta.'
-                : editingUser?.id === currentUserId && editMei
-                  ? 'Você pode desligar quando não precisar mais do módulo MEI.'
-                  : 'Permite uso dos recursos exclusivos para MEI.'}
-            </Text>
-          </View>
-          <ToggleSwitch
-            value={editMei}
-            onValueChange={setEditMei}
-            activeColor={theme.primary}
-          />
-        </View>
-
-        {editMei ? (
-          <View style={[styles.switchRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
-            <View>
-              <Text style={styles.switchLabel}>Tipos de nota liberados</Text>
-              <Text style={styles.switchHelper}>
-                Define o que o usuário pode cadastrar e emitir (NFS-e, NF-e, NFC-e).
-              </Text>
-            </View>
-            {editDocsLoading ? (
-              <ActivityIndicator size="small" color={theme.primary} />
-            ) : (
-              <>
-                <View style={[styles.switchRow, { marginTop: 0 }]}>
-                  <Text style={styles.switchLabel}>NFS-e (serviços)</Text>
-                  <ToggleSwitch value={editDocNfse} onValueChange={setEditDocNfse} activeColor={theme.primary} />
-                </View>
-                <View style={[styles.switchRow, { marginTop: 0 }]}>
-                  <Text style={styles.switchLabel}>NF-e (produtos)</Text>
-                  <ToggleSwitch value={editDocNfe} onValueChange={setEditDocNfe} activeColor={theme.primary} />
-                </View>
-                <View style={[styles.switchRow, { marginTop: 0 }]}>
-                  <Text style={styles.switchLabel}>NFC-e (varejo)</Text>
-                  <ToggleSwitch value={editDocNfce} onValueChange={setEditDocNfce} activeColor={theme.primary} />
-                </View>
-              </>
-            )}
-          </View>
         ) : null}
 
         {editingUser?.role === 'usuario' ? (
@@ -2795,18 +2583,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
         </Pressable>
       </Modal>
 
-      <EmpresaStripeMeiBillingModal
-        open={!!billingEmpresa}
-        empresa={billingEmpresa}
-        meiUsuariosEmUso={
-          billingEmpresa
-            ? users.filter((u) => u.empresaId === billingEmpresa.id && u.mei === true).length
-            : null
-        }
-        onClose={() => setBillingEmpresa(null)}
-        onMaxMeiSynced={fetchEmpresas}
-      />
-
       <SidePanel
         open={!!membersEmpresa}
         onClose={() => setMembersEmpresa(null)}
@@ -2832,7 +2608,7 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
         <Text style={styles.helperText}>
           {empresaMembersList.length === 0
             ? 'Nenhum usuário vinculado a esta empresa.'
-            : `${empresaMembersList.length} usuário${empresaMembersList.length === 1 ? '' : 's'} vinculado${empresaMembersList.length === 1 ? '' : 's'} · ${empresaMembersMeiCount} com vaga MEI · ${empresaMembersList.length - empresaMembersMeiCount} PF / Outros. Toque em um nome para editar.`}
+            : `${empresaMembersList.length} usuário${empresaMembersList.length === 1 ? '' : 's'} vinculado${empresaMembersList.length === 1 ? '' : 's'}. Toque em um nome para editar.`}
         </Text>
         <View style={styles.membersList}>
           {empresaMembersList.map((member) => {
@@ -2858,12 +2634,6 @@ export default function ManageUsersScreen({ onBack, onImpersonateSuccess }: Prop
                       label={ROLE_LABEL[member.role] || member.role}
                       bg={roleTone.bg}
                       fg={roleTone.fg}
-                      styles={styles}
-                    />
-                    <Badge
-                      label={getMeiUserTypeLabel(member.mei)}
-                      bg={theme.backgroundMuted}
-                      fg={isMeiSlotUser(member.mei) ? theme.success : theme.textSecondary}
                       styles={styles}
                     />
                     <Badge
@@ -3036,46 +2806,6 @@ const createStyles = (theme: Theme, isDesktop: boolean, isDarkMode: boolean) => 
       backgroundColor: tokens.accent,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-
-    empresaMeiFilterBlock: {
-      marginBottom: 12,
-      gap: 8,
-    },
-    empresaMeiFilterLabel: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: theme.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.4,
-    },
-    empresaMeiFilterChips: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 8,
-    },
-    meiFilterChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: StyleSheet.hairlineWidth,
-    },
-    meiFilterChipText: {
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    meiStatBadge: {
-      alignSelf: 'flex-start',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-      borderWidth: StyleSheet.hairlineWidth,
-      marginTop: 4,
-    },
-    meiStatBadgeText: {
-      fontSize: 12,
-      fontWeight: '700',
     },
 
     // -- List --

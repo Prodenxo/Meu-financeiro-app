@@ -1,6 +1,5 @@
 import { apiClient } from '../lib/apiClient';
 import { isValidCnpjDigits } from '../lib/validateCnpj';
-import type { CnpjLookupData } from './meiNotasService';
 import { supabase } from '../lib/supabase';
 
 export interface EmpresaFullData {
@@ -114,45 +113,14 @@ export interface CnpjLookupResult {
   porte?: string | null;
 }
 
-const shouldFallbackCnpjLookup = (error: unknown) => {
-  if (!(error instanceof Error)) return true;
-  const msg = error.message.toLowerCase();
-  if (msg.includes('not authenticated') || msg.includes('não autenticado')) return false;
-  if (msg.includes('inválido') || msg.includes('14 dígitos')) return false;
-  if (msg.includes('não encontrado')) return false;
-  return true;
-};
-
-const fromClientCnpjLookup = (data: CnpjLookupData): CnpjLookupResult => ({
-  cpfCnpj: data.cpfCnpj,
-  razaoSocial: data.razaoSocial,
-  nomeFantasia: data.nomeFantasia,
-  email: data.email,
-  telefone: data.telefone,
-  inscricaoMunicipal: data.inscricaoMunicipal,
-  inscricaoEstadual: data.inscricaoEstadual,
-  endereco: data.endereco,
-  situacaoCadastral: data.situacaoCadastral,
-  porte: data.porte,
-  opcaoSimples: data.opcaoSimples,
-});
-
-/** Consulta dados cadastrais (PlugNotas + BrasilAPI no backend; fallback direto BrasilAPI no dispositivo). */
+/** Consulta dados cadastrais do CNPJ no backend. */
 export async function lookupEmpresaCnpj(cnpj: string): Promise<CnpjLookupResult> {
   const digits = cnpj.replace(/\D/g, '');
   if (digits.length !== 14) throw new Error('CNPJ deve ter 14 dígitos.');
   if (!isValidCnpjDigits(digits)) {
     throw new Error('CNPJ inválido. Verifique os dígitos informados.');
   }
-
-  try {
-    return await apiClient.get<CnpjLookupResult>(`/users/empresas/cnpj-lookup/${digits}`);
-  } catch (backendError) {
-    if (!shouldFallbackCnpjLookup(backendError)) throw backendError;
-    const { lookupCnpj } = await import('./meiNotasService');
-    const data = await lookupCnpj(digits);
-    return fromClientCnpjLookup(data);
-  }
+  return await apiClient.get<CnpjLookupResult>(`/users/empresas/cnpj-lookup/${digits}`);
 }
 
 export async function createEmpresaLimits(input: EmpresaLimitsPayload): Promise<EmpresaFullData> {

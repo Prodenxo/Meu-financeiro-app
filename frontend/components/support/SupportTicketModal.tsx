@@ -280,7 +280,7 @@ export default function SupportTicketModal({
                     icon="chatbox-ellipses-outline"
                     value={assunto}
                     onChangeText={setAssunto}
-                    placeholder="Ex.: erro ao emitir nota fiscal"
+                    placeholder="Ex.: erro ao salvar uma transação"
                   />
                   <Field
                     label="Descrição"
