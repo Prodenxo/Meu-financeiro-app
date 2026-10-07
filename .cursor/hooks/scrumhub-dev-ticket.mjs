@@ -16,6 +16,7 @@
  * Login fica em ~/.cursor/scrumhub/scrumhub.local.env (nunca no git).
  * Uso manual: node .cursor/hooks/scrumhub-dev-ticket.mjs --commit <sha>
  * Simular sem criar: SCRUMHUB_DRY_RUN=1
+ * Acentos estragados ("Ã§Ã£o") são consertados antes de enviar; tickets antigos: --consertar-acentos
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -68,6 +69,42 @@ function argDiffRange() {
   const from = fromIdx >= 0 ? String(process.argv[fromIdx + 1] || '').trim() : '';
   const to = toIdx >= 0 ? String(process.argv[toIdx + 1] || '').trim() : '';
   return { from, to };
+}
+
+/* ---------- acentos ---------- */
+
+/** Bytes 0x80–0x9F do Windows-1252 que viram outros caracteres quando UTF-8 é lido errado. */
+const CP1252 = {
+  '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85, '†': 0x86, '‡': 0x87, 'ˆ': 0x88, '‰': 0x89, 'Š': 0x8a,
+  '‹': 0x8b, 'Œ': 0x8c, 'Ž': 0x8e, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97,
+  '˜': 0x98, '™': 0x99, 'š': 0x9a, '›': 0x9b, 'œ': 0x9c, 'ž': 0x9e, 'Ÿ': 0x9f,
+};
+const TRECHO_SUSPEITO = /[\u0080-\u00ff€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ]{2,}/g;
+const utf8Estrito = new TextDecoder('utf-8', { fatal: true });
+
+/**
+ * Conserta texto UTF-8 que foi lido como Windows-1252 ("Ã§Ã£o" → "ção").
+ * Só troca trechos que decodificam como UTF-8 válido; acentos corretos ficam como estão.
+ */
+function consertarAcentos(texto) {
+  let atual = String(texto ?? '');
+  for (let rodada = 0; rodada < 3; rodada += 1) {
+    const proximo = atual.replace(TRECHO_SUSPEITO, (trecho) => {
+      const bytes = [];
+      for (const ch of trecho) {
+        const code = ch.codePointAt(0);
+        bytes.push(code <= 0xff ? code : CP1252[ch]);
+      }
+      try {
+        return utf8Estrito.decode(Uint8Array.from(bytes));
+      } catch {
+        return trecho;
+      }
+    });
+    if (proximo === atual) return atual;
+    atual = proximo;
+  }
+  return atual;
 }
 
 async function drainStdin() {
@@ -515,6 +552,36 @@ async function ticketEhExterno(id, cookie, state) {
   return valor === true || Number(valor) === 1;
 }
 
+/** `--consertar-acentos`: corrige título e descrição dos tickets internos com acento estragado. */
+async function consertarTicketsAntigos() {
+  const state = readState();
+  const env = { ...loadEnvFile(envFile), ...process.env };
+  let cookie = await resolveSession(env, state);
+  if (!cookie) return reply({ user_message: `Falta SCRUMHUB_EMAIL e SCRUMHUB_PASSWORD em ${credentialsHint}` });
+  let { result } = await resolveStatusId(cookie);
+  if (isAuthFailure(result)) {
+    const { email, password } = credenciais(env);
+    if (!email || !password) return reply({ user_message: `Sessão do ScrumHub caiu. Coloque e-mail e senha em ${credentialsHint}` });
+    cookie = await login(email, password);
+    writeState({ ...readState(), sessionCookie: cookie, sessionAt: Date.now() });
+  }
+
+  const linhas = [];
+  for (const t of await listarTicketsInternosProjeto(cookie)) {
+    const nome = consertarAcentos(t.nome);
+    const descricao = consertarAcentos(t.descricao);
+    if (nome === String(t.nome ?? '') && descricao === String(t.descricao ?? '')) continue;
+    if (process.env.SCRUMHUB_DRY_RUN) {
+      linhas.push(`#${t.id} ${nome}\n  ${descricao.slice(0, 160).replace(/\n/g, ' ')}`);
+      continue;
+    }
+    const prioridade = typeof t.prioridade === 'string' && t.prioridade ? t.prioridade : PRIORIDADE;
+    const r = await requestWithFallback(`/tickets-pai/${t.id}`, { method: 'PUT', body: { nome, descricao, prioridade }, cookie });
+    linhas.push(r.ok && r.json?.success !== false ? `#${t.id} corrigido: ${nome}` : `#${t.id} falhou: ${r.json?.error || r.json?.message || `HTTP ${r.status}`}`);
+  }
+  return reply({ user_message: linhas.length ? linhas.join('\n') : 'Nenhum ticket com acento estragado.' });
+}
+
 /* ---------- principal ---------- */
 
 async function main() {
@@ -522,6 +589,7 @@ async function main() {
   if (lockFd === null) return reply({});
 
   try {
+    if (process.argv.includes('--consertar-acentos')) return await consertarTicketsAntigos();
     await drainStdin();
 
     repoRoot = resolveRepoRoot();
@@ -589,7 +657,7 @@ async function main() {
     // Modo correção: comenta num ticket existente em vez de abrir outro.
     if (ticketAlvo) {
       const externo = await ticketEhExterno(ticketAlvo, cookie, state);
-      const comentario = externo ? comentarioParaCliente(map) : descricaoDoTicket(map);
+      const comentario = consertarAcentos(externo ? comentarioParaCliente(map) : descricaoDoTicket(map));
       if (process.env.SCRUMHUB_DRY_RUN) {
         return reply({ user_message: `[comentário no ticket #${ticketAlvo} — ${externo ? 'externo' : 'interno'}]\n\n${comentario}` });
       }
@@ -608,8 +676,8 @@ async function main() {
 
     // Pedido manual por commit usa o texto do commit; nos demais a nota vale se foi escrita depois do último ticket.
     const nota = sha ? null : notaHumana(modoCommit === 'working' ? 0 : Date.parse(state.at || 0) || 0);
-    const nome = nota?.nome || tituloDoTicket(map);
-    const descricao = nota?.descricao || descricaoDoTicket(map);
+    const nome = consertarAcentos(nota?.nome || tituloDoTicket(map));
+    const descricao = consertarAcentos(nota?.descricao || descricaoDoTicket(map));
 
     if (fixTicketId) {
       if (process.env.SCRUMHUB_DRY_RUN) {
