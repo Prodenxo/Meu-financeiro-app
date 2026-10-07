@@ -1,5 +1,5 @@
 # Sobe a API (:3333, do repo Meu-financeiro-clone) num terminal novo e o Expo neste, em modo LAN (celular via Expo Go).
-# Uso (na raiz): npm run dev   ou   .\scripts\dev.ps1
+# Uso (na raiz): npm run dev   ou   .\scripts\dev.ps1   (cache limpo: npm run dev:limpo)
 # API em outra pasta: defina MF_BACKEND_DIR antes de rodar.
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -44,4 +44,4 @@ if (-not (Test-Path 'node_modules') -and -not (Test-Path (Join-Path $root 'node_
   npm install
   Set-Location -LiteralPath $frontend
 }
-npx expo start --lan
+npx expo start --lan @args

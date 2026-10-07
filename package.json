@@ -5,6 +5,7 @@
   "description": "Meu Financeiro — app Expo (celular). API, Supabase e site Next ficam no repo Meu-financeiro-clone.",
   "scripts": {
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev.ps1",
+    "dev:limpo": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev.ps1 --clear",
     "dev:frontend": "npm start --prefix frontend",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
