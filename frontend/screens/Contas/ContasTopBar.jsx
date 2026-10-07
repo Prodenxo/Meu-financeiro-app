@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { initialsOf } from '../Dashboard/overview/OverviewHeader';
 import { TOUCH_MIN } from '../Dashboard/overview/overviewTokens';
 
-/** ☰ Contas · avatar. O menu só aparece onde não há navegação no topo (web largo). */
-export function ContasTopBar({ tokens, displayName, showMenu, onOpenMenu, onOpenProfile }) {
+/** ☰ título · avatar. O menu só aparece onde não há navegação no topo (web largo). */
+export function ContasTopBar({ tokens, displayName, showMenu, onOpenMenu, onOpenProfile, title = 'Contas' }) {
   return (
     <View style={styles.row}>
       {showMenu ? (
@@ -19,8 +19,8 @@ export function ContasTopBar({ tokens, displayName, showMenu, onOpenMenu, onOpen
           <Ionicons name="menu" size={24} color={tokens.text} />
         </Pressable>
       ) : null}
-      <Text style={[styles.title, { color: tokens.text }]} numberOfLines={1}>
-        Contas
+      <Text style={[styles.title, { color: tokens.text }]} numberOfLines={1} accessibilityRole="header">
+        {title}
       </Text>
       <Pressable
         onPress={onOpenProfile}
