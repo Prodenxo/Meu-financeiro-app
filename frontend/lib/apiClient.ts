@@ -40,6 +40,17 @@ const readApiErrorCode = (errors: unknown): string | undefined => {
   return undefined;
 };
 
+export const NETWORK_ERROR_MESSAGE =
+  'Sem conexão com o servidor. Verifique sua internet e tente de novo.';
+
+const fetchOrNetworkError = async (url: string, init: RequestInit): Promise<Response> => {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw Object.assign(new Error(NETWORK_ERROR_MESSAGE), { code: 'NETWORK_ERROR' });
+  }
+};
+
 const getBaseUrl = () => {
   const apiUrl = resolveApiUrl();
   logLocalhostBackendHint(apiUrl);
@@ -75,7 +86,7 @@ const requestJson = async <T>(path: string, options: RequestInit = {}): Promise<
       : undefined
   );
 
-  const response = await fetch(url, {
+  const response = await fetchOrNetworkError(url, {
     ...options,
     cache: 'no-store',
     headers: {
@@ -112,7 +123,7 @@ const requestJson = async <T>(path: string, options: RequestInit = {}): Promise<
 
 const requestJsonPublic = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const url = `${getBaseUrl()}${normalizePath(path)}`;
-  const response = await fetch(url, {
+  const response = await fetchOrNetworkError(url, {
     ...options,
     cache: 'no-store',
     headers: {
@@ -151,7 +162,7 @@ const requestForm = async <T>(path: string, formData: FormData): Promise<T> => {
   const url = `${getBaseUrl()}${normalizePath(path)}`;
   const headers = await buildAuthHeaders();
 
-  const response = await fetch(url, {
+  const response = await fetchOrNetworkError(url, {
     method: 'POST',
     body: formData,
     cache: 'no-store',
