@@ -5,6 +5,7 @@ type Router = ReturnType<typeof useRouter>
 /** Rotas de configurações — URLs reais no web (ex.: /configuracoes/solicitacoes). */
 export const SETTINGS_ROUTES = {
   index: '/(app)/configuracoes',
+  perfil: '/(app)/configuracoes/perfil',
   usuarios: '/(app)/configuracoes/usuarios',
   solicitacoes: '/(app)/configuracoes/solicitacoes',
 } as const
