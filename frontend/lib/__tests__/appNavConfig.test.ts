@@ -44,4 +44,12 @@ describe('appNavConfig — menu inferior', () => {
     expect(resolveAppScreenFromPath('/configuracoes/usuarios')).toBe('Configuracoes');
     expect(resolveAppScreenFromPath('/')).toBe('Dashboard');
   });
+
+  it('Tutoriais fica no menu "Mais" e cobre a central, a gestão e cada tutorial', () => {
+    expect(SCREEN_TO_HREF.Tutoriais).toBe('/(app)/tutoriais');
+    expect(resolveAppScreenFromPath('/(app)/tutoriais')).toBe('Tutoriais');
+    expect(resolveAppScreenFromPath('/tutoriais/gerenciar')).toBe('Tutoriais');
+    expect(resolveAppScreenFromPath('/tutoriais/0b6f7a52-1c1d-4f0e-9a51-2f1c2a9d1e11')).toBe('Tutoriais');
+    expect(isBottomNavMenuActive('Tutoriais')).toBe(true);
+  });
 });

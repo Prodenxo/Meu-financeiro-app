@@ -267,7 +267,7 @@ export function PrimaryButton({ tokens, icon, label, onPress, disabled, busy, st
   );
 }
 
-export function SecondaryButton({ tokens, icon, label, onPress, disabled, tone }) {
+export function SecondaryButton({ tokens, icon, label, onPress, disabled, tone, style }) {
   const color = tone === 'danger' ? tokens.expense : tokens.primary;
   return (
     <Pressable
@@ -280,6 +280,7 @@ export function SecondaryButton({ tokens, icon, label, onPress, disabled, tone }
         { borderColor: tokens.cardBorder, backgroundColor: tokens.card },
         disabled && { opacity: 0.45 },
         pressed && { opacity: 0.75 },
+        style,
       ]}
     >
       {icon ? <Ionicons name={icon} size={18} color={color} /> : null}

@@ -69,6 +69,12 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     showInBottomNav: true,
   },
   {
+    screen: 'Tutoriais',
+    label: 'Tutoriais',
+    icon: 'book-outline',
+    activeIcon: 'book',
+  },
+  {
     screen: 'Configuracoes',
     label: 'Configurações',
     icon: 'settings-outline',
@@ -84,6 +90,7 @@ export const SCREEN_TO_HREF: Record<AppScreenName, string> = {
   Categorias: '/(app)/categorias',
   Orcamentos: '/(app)/orcamentos',
   Agenda: '/(app)/agenda',
+  Tutoriais: '/(app)/tutoriais',
   Configuracoes: '/(app)/configuracoes',
 };
 
@@ -113,6 +120,9 @@ export function resolveAppScreenFromPath(pathname?: string | null): AppScreenNam
   }
   if (suffix === '/solicitacoes') {
     return 'Configuracoes';
+  }
+  if (suffix === '/tutoriais' || suffix.startsWith('/tutoriais/')) {
+    return 'Tutoriais';
   }
 
   return PATH_SUFFIX_TO_SCREEN[suffix] ?? 'Dashboard';

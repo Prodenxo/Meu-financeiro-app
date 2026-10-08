@@ -8,6 +8,7 @@ export type AppScreenName =
   | "Categorias"
   | "Orcamentos"
   | "Agenda"
+  | "Tutoriais"
   | "Configuracoes";
 
 export type NavigationContextValue = {
