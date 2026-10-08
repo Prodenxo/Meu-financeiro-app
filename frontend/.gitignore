@@ -11,8 +11,9 @@ expo-env.d.ts
 .env
 .env*.local
 
-# Native gerado localmente (android/ versionado de propósito no repo)
-# ios/
+# Native gerado pelo EAS a cada build (fonte: app.json)
+/android/
+/ios/
 
 # Build / logs
 *.log

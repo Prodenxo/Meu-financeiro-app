@@ -8,16 +8,19 @@
       "node": "20.19.4",
       "environment": "development",
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "node": "20.19.4",
       "environment": "preview",
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "preview"
     },
     "production": {
       "node": "20.19.4",
       "environment": "production",
+      "channel": "production",
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://iqcupswgotsuncysagmj.supabase.co",
