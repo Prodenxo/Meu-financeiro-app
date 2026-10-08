@@ -305,7 +305,11 @@ export const apiClient = {
       method: 'PATCH',
       body: body !== undefined ? JSON.stringify(body) : undefined
     }),
-  delete: <T>(path: string) => requestJson<T>(path, { method: 'DELETE' }),
+  delete: <T>(path: string, body?: unknown) =>
+    requestJson<T>(path, {
+      method: 'DELETE',
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    }),
   postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData)
 };
 

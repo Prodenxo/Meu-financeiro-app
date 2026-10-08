@@ -9,6 +9,8 @@ import { useNavigationDrawer } from '@/lib/navigationContext';
 import { SETTINGS_ROUTES } from '@/lib/settingsRoutes';
 import { startGoogleAuthFlow } from '@/lib/google-auth-flow';
 import { disconnectGoogle } from '@/lib/googleCalendarApi';
+import { accountDeletionErrorMessage, deleteMyAccount } from '@/lib/accountDeletion';
+import { supabase } from '@/lib/supabase';
 import { canManageUsers, canReviewAccessRequests } from '@/lib/settingsProfile';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useGoogleConnection } from '@/hooks/useGoogleConnection';
@@ -19,6 +21,7 @@ import { getOverviewTokens } from './Dashboard/overview/overviewTokens';
 import { initialsOf } from './Dashboard/overview/OverviewHeader';
 import { AppearanceSelector, GoogleCalendarIcon, SettingsRow, SettingsSection, SettingsTopBar } from './Settings/SettingsRows';
 import { GoogleAgendaSheet, googleStatusAppearance } from './Settings/GoogleAgendaSheet';
+import { DeleteAccountSheet } from './Settings/DeleteAccountSheet';
 
 const CONTENT_MAX = 720;
 const AGENT_WHATSAPP_URL = 'https://wa.me/5521974526796';
@@ -43,6 +46,7 @@ export default function SettingsScreen() {
   const [googleSheet, setGoogleSheet] = useState(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
+  const [deleteSheet, setDeleteSheet] = useState(null);
   const notify = useCallback((message, variant = 'success') => setToast({ message, variant }), []);
 
   const name = displayName || user?.email || 'Usuário';
@@ -90,6 +94,20 @@ export default function SettingsScreen() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleDeleteAccount = async (confirmation) => {
+    if (deleteSheet?.busy) return;
+    setDeleteSheet({ busy: true, error: null });
+    try {
+      await deleteMyAccount(confirmation);
+    } catch (error) {
+      setDeleteSheet({ busy: false, error: accountDeletionErrorMessage(error) });
+      return;
+    }
+    // O login já não existe no servidor: encerra só neste aparelho e volta para a entrada.
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    await useAuthStore.getState().signOut().catch(() => {});
   };
 
   const showTeam = canManageUsers(role);
@@ -184,7 +202,16 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection tokens={tokens}>
-          <SettingsRow tokens={tokens} icon="log-out-outline" title="Sair da conta" tone="danger" onPress={requestSignOut} last />
+          <SettingsRow tokens={tokens} icon="log-out-outline" title="Sair da conta" tone="danger" onPress={requestSignOut} />
+          <SettingsRow
+            tokens={tokens}
+            icon="trash-outline"
+            title="Excluir minha conta"
+            subtitle="Apaga seus dados e o login"
+            tone="danger"
+            onPress={() => setDeleteSheet({ busy: false, error: null })}
+            last
+          />
         </SettingsSection>
       </ScrollView>
 
@@ -209,6 +236,17 @@ export default function SettingsScreen() {
           onCancelDisconnect={() => setGoogleSheet({ confirming: false, error: null })}
           onDisconnect={() => void handleDisconnect()}
           onClose={() => setGoogleSheet(null)}
+        />
+      ) : null}
+
+      {deleteSheet ? (
+        <DeleteAccountSheet
+          tokens={tokens}
+          email={user?.email || ''}
+          busy={deleteSheet.busy}
+          error={deleteSheet.error}
+          onConfirm={(text) => void handleDeleteAccount(text)}
+          onClose={() => setDeleteSheet(null)}
         />
       ) : null}
 
