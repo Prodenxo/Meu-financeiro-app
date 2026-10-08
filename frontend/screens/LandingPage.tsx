@@ -245,7 +245,7 @@ export default function LandingPage() {
           {/* Left: copy */}
           <View style={s.heroLeft}>
             <Image
-              source={require('../assets/icon.png')}
+              source={require('../assets/logo.png')}
               style={s.heroLogo}
               resizeMode="contain"
             />

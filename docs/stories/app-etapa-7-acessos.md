@@ -51,8 +51,8 @@ separadores e menu ⋮ com ações nomeadas.
 ## Pendências conhecidas
 
 - Sem tabela de auditoria: o "acessar como" fica só no log do servidor.
-- Colunas `is_reusable`, `uses_count`, `raw_token` e a função `increment_invite_uses` existem no banco mas não nas
-  migrations do repositório.
+- A função `increment_invite_uses` não existe no banco (conferido em 2026-10-08); o backend soma `uses_count` direto e o
+  convite funciona. Aceito pelo dono: só o contador pode ficar 1 abaixo em cadastros simultâneos.
 - Superadmin pode redefinir a senha de outro superadmin (acesso de emergência, regra do backend).
 - Usuário com mais de um vínculo aparece uma vez (o vínculo mais recente).
 

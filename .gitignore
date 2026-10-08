@@ -33,15 +33,15 @@ backend/scripts/one-time/exports/*
 !backend/scripts/one-time/exports/.gitignore
 
 # Assets temporários / duplicatas na raiz (canônicos: frontend/public/)
-frontend-screenshot.png
-logo.png
-site.webmanifest
-favicon.ico
-favicon-16x16.png
-favicon-32x32.png
-apple-touch-icon.png
-android-chrome-192x192.png
-android-chrome-512x512.png
+/frontend-screenshot.png
+/logo.png
+/site.webmanifest
+/favicon.ico
+/favicon-16x16.png
+/favicon-32x32.png
+/apple-touch-icon.png
+/android-chrome-192x192.png
+/android-chrome-512x512.png
 
 # Windows Zone.Identifier (lixo de download)
 *Zone.Identifier*

@@ -20,7 +20,8 @@
       "versionCode": 74,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "monochromeImage": "./assets/monochrome-icon.png",
+        "backgroundColor": "#5b4fe9"
       },
       "package": "com.leonardo25.financaspessoaismobile"
     },
@@ -54,9 +55,14 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash.png",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#f5f5fa",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0f0f1c"
+          }
         }
       ]
     ],
