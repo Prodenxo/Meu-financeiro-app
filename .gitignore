@@ -96,6 +96,8 @@ Thumbs.db
 
 # Node / npm — gerado localmente (em qualquer pasta com package.json)
 package-lock.json
+# Lockfile do workspace (raiz + frontend): o EAS precisa dele para instalar com npm
+!/package-lock.json
 npm-shrinkwrap.json
 yarn.lock
 pnpm-lock.yaml
